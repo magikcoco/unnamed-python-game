@@ -6,18 +6,26 @@ from functools import reduce
 pygame.init()
 
 # CONSTANTS
+BLACK = (0, 0, 0)  # RGB for black
+WHITE = (255, 255, 255)  # RGB for white
+
 WIN_TITLE = 'untitled game'  # window title
 
 DEFAULT_FONT = pygame.font.SysFont(pygame.font.get_default_font(), 40)  # default font, use for info displays
+
+TILE_SIZE_MULT = 3
+TILE_W = 20 * TILE_SIZE_MULT
+TILE_H = 24 * TILE_SIZE_MULT
+
+DEFAULT_TILE = pygame.image.load(os.path.join('assets', 'tiles', 'default.png'))
+DEFAULT_TILE = pygame.transform.scale(DEFAULT_TILE, (TILE_W, TILE_H))
+DEFAULT_TILE.set_colorkey(BLACK)
 
 WIN_W = 1600  # width of the window
 WIN_H = WIN_W//16 * 9  # 16:9 aspect ratio
 DIS_W = WIN_W  # default to same as window width for now
 DIS_H = DIS_W//16 * 9  # 16:9 aspect ratio
 FPS = 24  # default to 24 fps
-
-BLACK = (0, 0, 0)  # RGB for black
-WHITE = (255, 255, 255)  # RGB for white
 
 TOP_LEFT = (0, 0)  # coordinates for top left of the display
 TOP_RIGHT = (DIS_W, 0)  # coordinates for top right of the display
@@ -57,6 +65,21 @@ def render_minimap(map_data):
                 pygame.draw.rect(display, WHITE, pygame.Rect(offset_x + x * 50, y * 50, 50, 50), 1)
 
 
+def render_isometric(map_data):
+    iso_x = 10 * TILE_SIZE_MULT
+    iso_y = 5 * TILE_SIZE_MULT
+    iso_z = 13 * TILE_SIZE_MULT
+    max_x = reduce(lambda x, y: max(x, len(y)), map_data, 0)  # performance friendly way to get largest x
+    offset_x = DIS_W/2 - max_x * 10  # X dimension offset from far left of display
+    max_y = len(map_data)
+    offset_y = DIS_H/2 - max_y * 10
+    for y, row in enumerate(map_data):
+        for x, tile in enumerate(row):
+            display.blit(DEFAULT_TILE, (offset_x + x * iso_x - y * iso_x, offset_y + x * iso_y + y * iso_y))  # render floor
+            if tile:
+                display.blit(DEFAULT_TILE, (offset_x + x * iso_x - y * iso_x, offset_y + x * iso_y + y * iso_y - iso_z))  # render 2nd level
+
+
 def main():
     # declare globals
     global clock
@@ -77,6 +100,7 @@ def main():
         # display map
         map_data = load_map('default.txt')
         render_minimap(map_data)
+        render_isometric(map_data)
 
         # debug overlay
         dt_text = DEFAULT_FONT.render('dt='+str(dt)+'ms', 1, WHITE)  # setup delta time text
