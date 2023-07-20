@@ -1,8 +1,11 @@
 # main file of the game
 import pygame, os
 
-# TODO: add a main menu with a start button
 # TODO: add a pause button with a quit to main menu button
+# TODO: add hover highlights to map
+# TODO: add movable character to map
+# TODO: add vision to character
+# TODO: change tiles out of vision to greyscale
 
 # SETUP PYGAME
 pygame.init()  # initialize pygame
@@ -21,9 +24,13 @@ TILE_SIZE_MULT = 3  # tile size multiplier to increase how large the tiles are
 TILE_W = 20 * TILE_SIZE_MULT  # base tile size times tile size multiplier, width
 TILE_H = 24 * TILE_SIZE_MULT  # tile height
 
+#tiles
 DEFAULT_TILE = pygame.image.load(os.path.join('assets', 'tiles', 'default.png'))  # default tile sprite
 DEFAULT_TILE = pygame.transform.scale(DEFAULT_TILE, (TILE_W, TILE_H))  # scale the tile
 DEFAULT_TILE.set_colorkey(BLACK)  # needed for transparent background on sprite
+#buttons
+START_BTN = pygame.image.load(os.path.join('assets', 'tiles', 'start_btn.png'))
+START_BTN_HL = pygame.image.load(os.path.join('assets', 'tiles', 'start_btn_highlight.png'))
 
 WIN_W = 1600  # width of the window
 WIN_H = WIN_W // 16 * 9  # 16:9 aspect ratio
@@ -33,9 +40,10 @@ FPS = 24  # default to 24 fps
 
 TOP_LEFT = (0, 0)  # coordinates for top left of the display
 TOP_RIGHT = (DIS_W, 0)  # coordinates for top right of the display
-
-MDIS_SIZE = (DIS_W // 5 * 3, DIS_H)  # map display surface size
-MDIS_OFFSET = (DIS_W // 2 - MDIS_SIZE[0] // 2, 0)  # middle third of screen
+MENU_DIS_SIZE = (DIS_W // 5, DIS_H)  # menu surface size
+MENU_DIS_OFFSET = (0, 0)  # from top left corner
+MAP_DIS_SIZE = (DIS_W // 5 * 3, DIS_H)  # map display surface size
+MAP_DIS_OFFSET = (DIS_W // 2 - MAP_DIS_SIZE[0] // 2, 0)  # middle third of screen
 
 # VARIABLES
 clock = pygame.time.Clock()  # used to lock fps in main game loop
@@ -43,16 +51,21 @@ clock = pygame.time.Clock()  # used to lock fps in main game loop
 running = True  # boolean for main game loop
 debug = True  # boolean for toggling debug information
 map_loaded = False  # boolean flag to determine if map has been loaded
-context_mission = True  # boolean flag if we should display map information
+main_menu_drawn = False  # flag to see if the main menu has been drawn
+context_main_menu = True  # main menu flag
+context_mission = False  # boolean flag if we should display map information
 
 dt = 0  # delta time is milliseconds since last frame
 rt = 0  # raw time is milliseconds since last frame excluding frame lock delay
 map_vel = 10  # speed at which the map moves
-map_off_x = MDIS_SIZE[0] / 2  # where to place iso map on the map display, x dimension
-map_off_y = MDIS_SIZE[1] / 2  # where top place iso map on the map display, y dimension
+map_off_x = MAP_DIS_SIZE[0] / 2  # where to place iso map on the map display, x dimension
+map_off_y = MAP_DIS_SIZE[1] / 2  # where top place iso map on the map display, y dimension
 
 map_data = [[]]  # global 2D list to hold map data
 last_frame_keys = []  # global list to hold the status of keys from the previous frame
+main_menu_buttons = []  # list of main menu buttons from top to bottom
+
+mouse_pos = (0, 0)  # position of the mouse
 
 # SETUP DISPLAY
 pygame.display.set_caption(WIN_TITLE)  # window title
@@ -60,7 +73,75 @@ screen = pygame.display.set_mode((WIN_W, WIN_H))  # application window
 display = pygame.Surface((DIS_W, DIS_H))  # display where things are rendered
 
 # render surfaces
-visible_map_dis = pygame.Surface(MDIS_SIZE)  # isometric map display
+main_menu_dis = pygame.Surface(MENU_DIS_SIZE)  # main menu
+visible_map_dis = pygame.Surface(MAP_DIS_SIZE)  # isometric map display
+main_menu_dis.set_colorkey(BLACK)  # set a transparent color that isn't used by sprites
+visible_map_dis.set_colorkey(BLACK)
+
+
+class Button:
+    def __init__(self, surface, x, y, image_tuple, button_id):
+        self.display_image = image_tuple[0]
+        self.other_image = image_tuple[1]
+        self.surface = surface
+        self.id = button_id
+        self.rect = self.display_image.get_rect()
+        self.rect.topleft = (x, y)
+        self.clicked = False
+        self.highlight = False
+
+    def draw(self):
+        self.surface.blit(self.display_image, (self.rect.x, self.rect.y))
+
+    def check_mouse(self):
+        action = False
+        if self.rect.collidepoint(mouse_pos):
+            if not self.highlight:
+                temp = self.display_image
+                self.display_image = self.other_image
+                self.other_image = temp
+                self.highlight = True
+                self.draw()
+            if pygame.mouse.get_pressed()[0] and not self.clicked:  # left click
+                action = True
+                self.clicked = True
+        elif self.highlight:
+            temp = self.display_image
+            self.display_image = self.other_image
+            self.other_image = temp
+            self.highlight = False
+            self.draw()
+
+        if not pygame.mouse.get_pressed()[0]:
+            self.clicked = False
+
+        return action
+
+
+def draw_main_menu():
+    global main_menu_drawn
+    main_menu_dis.fill(BLACK)
+    btn_scale = (main_menu_dis.get_width()//2, int(0.41 * main_menu_dis.get_width()//2))
+    btn_x = main_menu_dis.get_width()//2
+    btn_y = 20
+    start_btn_graphic = (pygame.transform.scale(START_BTN, btn_scale), pygame.transform.scale(START_BTN_HL, btn_scale))
+    start_btn = Button(main_menu_dis, btn_x, btn_y * 1, start_btn_graphic, 'start')
+    start_btn.draw()
+    main_menu_drawn = True
+    return [start_btn]
+
+
+def check_main_menu_collisions():
+    global context_main_menu
+    global context_mission
+    global main_menu_drawn
+
+    for button in main_menu_buttons:
+        if button.check_mouse():
+            if button.id == 'start':
+                context_main_menu = False
+                context_mission = True
+                main_menu_drawn = False
 
 
 def load_map(game_map):
@@ -125,6 +206,8 @@ def main():
     global map_off_y
     global map_data
     global last_frame_keys
+    global main_menu_buttons
+    global mouse_pos
 
     # MAIN GAME LOOP
     while running:
@@ -140,13 +223,24 @@ def main():
             handle_map_movement(keys)
         last_frame_keys = keys  # keep these keys to track changes in next frame
 
+        # mouse
+        mouse_pos = pygame.mouse.get_pos()
+        if context_main_menu:
+            check_main_menu_collisions()
+
         # RENDER GAME
         # fill screen to wipe away last frame
         display.fill(BLACK)  # fills screen with solid black
-        if debug and context_mission:  # fill green when debug is on to see surface boundaries
-            visible_map_dis.fill(GREEN)
-        elif context_mission:  # fill same as main display when no debug info shown
-            visible_map_dis.fill(BLACK)
+        if debug:
+            if context_mission:  # fill green when debug is on to see surface boundaries
+                visible_map_dis.fill(GREEN)
+        else:
+            if context_mission:  # fill same as main display when no debug info shown
+                visible_map_dis.fill(BLACK)
+
+        # display main menu
+        if context_main_menu and not main_menu_drawn:
+            main_menu_buttons = draw_main_menu()
 
         # display map
         if not map_loaded and context_mission:  # if we need to load a map, and it hasn't been loaded
@@ -163,8 +257,10 @@ def main():
             display.blit(rt_text, (0, 25))  # add delta time tracker to upper left
 
         # add surfaces
+        if context_main_menu:
+            display.blit(main_menu_dis, MENU_DIS_OFFSET)  # main menu
         if context_mission:
-            display.blit(visible_map_dis, MDIS_OFFSET)  # map
+            display.blit(visible_map_dis, MAP_DIS_OFFSET)  # map
 
         # put work on the screen
         screen.blit(pygame.transform.scale(display, screen.get_size()), TOP_LEFT)  # apply rendered display to window
