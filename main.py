@@ -12,7 +12,7 @@ import game_values as value
 # TODO: add hover highlights to map
 # TODO: add movable character to map
 # TODO: add vision to character
-# TODO: change tiles out of vision to greyscale
+# TODO: change sprites out of vision to greyscale
 
 # SETUP PYGAME
 pygame.init()  # initialize pygame

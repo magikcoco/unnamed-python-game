@@ -31,7 +31,7 @@ def render_visible_map(display):
     iso_z = 13 * value.TILE_SIZE_MULT  # z axis to move up or down a level
     for y, row in enumerate(value.MAP_DATA):  # data y axis
         for x, tile in enumerate(row):  # data x axis
-            # TODO: determine what tiles to load where
+            # TODO: determine what sprites to load where
             x_pos = value.ISO_OFFSET_X + x * iso_x - y * iso_x
             y_pos = value.ISO_OFFSET_Y + x * iso_y + y * iso_y
             display.draw(value.SPRITES['default tile'], (x_pos, y_pos))  # render the floor

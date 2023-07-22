@@ -4,7 +4,7 @@
 GAME_FONT = None
 ISO_OFFSET_X = 0  # offset for the isometric map, used to move it around
 ISO_OFFSET_Y = 0
-TILE_SIZE_MULT = 3  # tile size multiplier to increase how large the tiles are
+TILE_SIZE_MULT = 3  # tile size multiplier to increase how large the sprites are
 MAP_DATA = list()  # the data that gets read to form maps
 BUTTONS = list()  # the currently available buttons
 SPRITES = {}

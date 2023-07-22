@@ -9,14 +9,14 @@ def load_sprites():
     tile_w = 20 * value.TILE_SIZE_MULT  # base tile size times tile size multiplier, width
     tile_h = 24 * value.TILE_SIZE_MULT  # tile height
 
-    default_tile = pygame.image.load(os.path.join('assets', 'tiles', 'default.png'))  # default tile sprite
+    default_tile = pygame.image.load(os.path.join('assets', 'sprites', 'default.png'))  # default tile sprite
     default_tile = pygame.transform.scale(default_tile, (tile_w, tile_h))  # scale the tile
     default_tile.set_colorkey(value.BLACK)  # needed for transparent background on sprite
 
     value.SPRITES['default tile'] = default_tile
 
-    play_btn = pygame.image.load(os.path.join('assets', 'tiles', 'play_btn.png'))
-    play_btn_hl = pygame.image.load(os.path.join('assets', 'tiles', 'play_btn_highlight.png'))
+    play_btn = pygame.image.load(os.path.join('assets', 'sprites', 'play_btn.png'))
+    play_btn_hl = pygame.image.load(os.path.join('assets', 'sprites', 'play_btn_highlight.png'))
 
     value.SPRITES['play button'] = play_btn
     value.SPRITES['play button highlight'] = play_btn_hl
