@@ -13,7 +13,7 @@ def check_button_collisions():
                 value.CONTEXT_MISSION = True  # TODO: change the flag when new contexts are made
                 value.MAIN_MENU_DRAWN = False  # main menu not drawn anymore
                 value.BUTTONS.clear()  # clear the main menu buttons out
-            elif button.name == 'quit to main menu':
+            elif button.name == 'quit':
                 value.CONTEXT_MAIN_MENU = True
                 value.CONTEXT_DOWNTIME = False
                 value.CONTEXT_MEET = False

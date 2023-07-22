@@ -57,37 +57,43 @@ class Display:
 
 
 class Button:
-    def __init__(self, name, display, location, image_tuple):
-        self.image = image_tuple[0]
-        self.image_hl = image_tuple[1]
+    def __init__(self, name, s_size, color, color_hl, display, location):
+        self.my_surface = pygame.Surface(s_size)
         self.display = display
         self.name = name
-        self.rect = self.image.get_rect()
+        self.rect = self.my_surface.get_rect()
         self.rect.topleft = location
         self.clicked = False
         self.highlight = False
+        self.color = color
+        self.color_hl = color_hl
 
     def draw(self):
-        self.display.draw(self.image, self.rect.topleft)
+        x = self.rect.size[0]
+        y = self.rect.size[1]
+        off_x, off_y = value.GAME_FONT.size(self.name)
+        lt = 1  # line thickness
+        color = self.color
+        if self.highlight:
+            color = self.color_hl
+        pygame.draw.line(self.my_surface, color, (x - lt, 0), (x - lt, y), lt)  # right
+        pygame.draw.line(self.my_surface, color, (0, 0), (0, y), lt)  # left
+        pygame.draw.line(self.my_surface, color, (0, y - lt), (x, y - lt), lt)  # bot
+        pygame.draw.line(self.my_surface, color, (0, 0), (x, 0), lt)  # top
+        btn_text = value.GAME_FONT.render(self.name, 1, color)
+        self.display.draw(self.my_surface, self.rect.topleft)
+        self.display.draw(btn_text, (self.rect.centerx - off_x // 2, self.rect.centery - off_y // 2))
 
     def check_mouse(self):
         action = False
         if self.rect.collidepoint(self.display.get_relative_mouse_pos()):
             if not self.highlight:
-                temp = self.image
-                self.image = self.image_hl
-                self.image_hl = temp
                 self.highlight = True
-                #self.draw()
             if pygame.mouse.get_pressed()[0] and not self.clicked:  # left click
                 action = True
                 self.clicked = True
         elif self.highlight:
-            temp = self.image
-            self.image = self.image_hl
-            self.image_hl = temp
             self.highlight = False
-            self.draw()
 
         if not pygame.mouse.get_pressed()[0]:
             self.clicked = False

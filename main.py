@@ -8,6 +8,7 @@ import game_render as render
 import game_control as control
 import game_values as value
 
+# TODO: make buttons that don't suck
 # TODO: add highlights to tops of tiles on hover
 # TODO: add movable character to map
 # TODO: add vision to character

@@ -19,6 +19,7 @@ DEBUG_MODE = False  # toggles debug mode
 ISO_MAP_LOADED = False  # flag if any isometric map is currently loaded
 MAIN_MENU_DRAWN = False  # flag if the main menu has been drawn
 PAUSE_MENU_DRAWN = False
+BUTTON_SIZE = (160, 65)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
