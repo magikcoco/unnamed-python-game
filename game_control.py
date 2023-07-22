@@ -14,7 +14,15 @@ def check_button_collisions():
                 value.MAIN_MENU_DRAWN = False  # main menu not drawn anymore
                 value.BUTTONS.clear()  # clear the main menu buttons out
             elif button.name == 'quit to main menu':
-                print('test')
+                value.CONTEXT_MAIN_MENU = True
+                value.CONTEXT_DOWNTIME = False
+                value.CONTEXT_MEET = False
+                value.CONTEXT_LEGWORK = False
+                value.CONTEXT_MISSION = False
+                value.CONTEXT_ESCAPE = False
+                value.GAME_PAUSE = False
+                value.PAUSE_MENU_DRAWN = False
+                value.BUTTONS.clear()
 
 
 def handle_iso_movement(keys, last_frame_keys):
