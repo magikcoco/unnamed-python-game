@@ -29,3 +29,4 @@ def load_map(game_map):
     # read each row into a list of substrings, for each substring convert into a list of ints for each character
     value.MAP_DATA = [[int(c) for c in row] for row in f.read().split('\n')]  # 2D list
     f.close()  # close the file
+    value.ISO_MAP_LOADED = True
