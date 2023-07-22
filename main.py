@@ -8,7 +8,7 @@ import game_render as render
 import game_control as control
 import game_values as value
 
-# TODO: add a pause button with a quit to main menu button
+# TODO: load and display a map when in mission context
 # TODO: add hover highlights to map
 # TODO: add movable character to map
 # TODO: add vision to character
@@ -40,6 +40,8 @@ def main():
     top_left = (0, 0)  # coordinates for top left of main_surface
     main_menu_size = (DIS_W // 5, DIS_H - 20)  # menu my_surface size
     main_menu_loc = (10, 10)  # from top left corner
+    pause_menu_size = (DIS_W // 5 * 2, DIS_H // 3 * 2)
+    pause_menu_loc = (DIS_W // 2 - pause_menu_size[0] // 2, DIS_H // 2 - pause_menu_size[1] // 2)
     map_iso_size = (DIS_W // 5 * 3, DIS_H)  # map main_surface my_surface size
     map_iso_loc = (DIS_W // 2 - map_iso_size[0] // 2, 0)  # middle third of screen
 
@@ -62,6 +64,7 @@ def main():
 
     # set displays
     main_menu_display = objects.Display('main menu', main_menu_size, main_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
+    pause_menu_display = objects.Display('', pause_menu_size, pause_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
 
     #load initial values
     load.load_sprites()
@@ -84,6 +87,8 @@ def main():
         mouse_pos = pygame.mouse.get_pos()
         if value.CONTEXT_MAIN_MENU:
             control.check_button_collisions()
+        elif value.GAME_PAUSE:
+            control.check_button_collisions()
 
         # GAME LOGIC
         # load map if not already
@@ -100,6 +105,12 @@ def main():
             for button in value.BUTTONS:
                 button.draw()
             main_menu_display.render()
+        elif value.GAME_PAUSE:
+            if not value.PAUSE_MENU_DRAWN:
+                render.draw_pause_menu(pause_menu_display)
+            for button in value.BUTTONS:
+                button.draw()
+            pause_menu_display.render()
 
         # debug_mode overlay
         if value.DEBUG_MODE:

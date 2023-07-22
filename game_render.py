@@ -25,6 +25,25 @@ def draw_main_menu(display):
     value.MAIN_MENU_DRAWN = True
 
 
+def draw_pause_menu(display):
+    # button scale
+    btn_scale = (display.get_width() // 3, int(0.41 * display.get_width() // 3))
+    # pause button
+    pause_btn_sprite = pygame.transform.scale(value.SPRITES['play button'], btn_scale)  # TODO: make a pause button sprite
+    pause_btn_sprite_hl = pygame.transform.scale(value.SPRITES['play button highlight'], btn_scale)
+    pause_btn_group = (pause_btn_sprite, pause_btn_sprite_hl)
+    btn_x = display.get_width() // 2 - pause_btn_sprite.get_width() // 2
+    btn_y = 30
+    pause_btn = objects.Button('quit to main menu', display, (btn_x, btn_y + 20 * 0), pause_btn_group)
+    pause_btn.draw()
+
+    # append all buttons to play
+    value.BUTTONS.append(pause_btn)
+
+    # set flags
+    value.PAUSE_MENU_DRAWN = True
+
+
 def render_visible_map(display):
     iso_x = 10 * value.TILE_SIZE_MULT  # x-axis offset
     iso_y = 5 * value.TILE_SIZE_MULT  # y-axis offset
