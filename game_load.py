@@ -15,12 +15,6 @@ def load_sprites():
 
     value.SPRITES['default tile'] = default_tile
 
-    play_btn = pygame.image.load(os.path.join('assets', 'sprites', 'play_btn.png'))
-    play_btn_hl = pygame.image.load(os.path.join('assets', 'sprites', 'play_btn_highlight.png'))
-
-    value.SPRITES['play button'] = play_btn
-    value.SPRITES['play button highlight'] = play_btn_hl
-
 
 def load_map(game_map):
     #file operation
