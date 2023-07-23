@@ -1,45 +1,8 @@
-import math
 
 ## DEFINES CUSTOM OBJECTS FOR THE GAME ##
 
 import pygame
 import game_values as value
-
-
-class Point:
-    def __init__(self, point=(0, 0)):
-        self.x = int(point[0])
-        self.y = int(point[1])
-
-    def __add__(self, other):
-        return Point((self.x + other.x, self.y + other.y))
-
-    def __sub__(self, other):
-        return Point((self.x - other.x, self.y - other.y))
-
-    def __mul__(self, scalar):
-        return Point((self.x*scalar, self.y*scalar))
-
-    def __floordiv__(self, scalar):
-        return Point((self.x/scalar, self.y/scalar))
-
-    def __len__(self):
-        return int(math.sqrt(self.x**2 + self.y**2))
-
-    def get(self):
-        return (self.x, self.y)
-
-
-def _draw_dashed_line(surface, color, start_pos, end_pos, width=1, dash_length=10):
-    origin = Point(start_pos)
-    target = Point(end_pos)
-    displacement = target - origin
-    length = len(displacement)
-    slope = displacement//length
-    for i in range(0, length//dash_length, 2):
-        start = origin + (slope * i * dash_length)
-        end = origin + (slope * (i + 1) * dash_length)
-        pygame.draw.line(surface, color, start.get(), end.get(), width)
 
 
 class Display:
@@ -107,42 +70,78 @@ class Button:
         self.highlight = False
         self.color = color
         self.color_hl = color_hl
-        self.hl_flag = True
-        self.hl_tick = 10
-        self.hl_tick_c = self.hl_tick
+        self.to = 0  # top offset for highlight line
+        self.bo = self.rect.size[0]
+        self.lo = self.rect.size[1]
+        self.ro = 0
+        self.top_go = True
+        self.bot_go = True
+        self.left_go = False
+        self.right_go = False
 
     def draw(self):
         self.my_surface.fill(self.display.get_fill())
         x = self.rect.size[0]
         y = self.rect.size[1]
         off_x, off_y = value.GAME_FONT.size(self.name)
-        lt = 2  # line thickness
-        dt = 40
+        hl_vel = 10  # how fast the line moves
+        t = 2  # line thickness
+        l = 40  # length of animated line on highlight
         s = self.my_surface
         if not self.highlight:
             c = self.color
-            pygame.draw.line(s, c, (x - lt, 0), (x - lt, y), lt)  # right
-            pygame.draw.line(s, c, (0, 0), (0, y), lt)  # left
-            pygame.draw.line(s, c, (0, y - lt), (x, y - lt), lt)  # bot
-            pygame.draw.line(s, c, (0, 0), (x, 0), lt)  # top
+            pygame.draw.line(s, c, (x - t, 0), (x - t, y), t)  # right
+            pygame.draw.line(s, c, (0, 0), (0, y), t)  # left
+            pygame.draw.line(s, c, (0, y - t), (x, y - t), t)  # bot
+            pygame.draw.line(s, c, (0, 0), (x, 0), t)  # top
             btn_text = value.GAME_FONT.render(self.name, 1, self.color)
         else:
             c = self.color_hl
-            if not self.hl_tick_c:
-                self.hl_tick_c = self.hl_tick
-                self.hl_flag = not self.hl_flag
-            else:
-                self.hl_tick_c -= 1
-            if self.hl_flag:
-                _draw_dashed_line(s, c, (x - lt, y), (x - lt, 0), lt, dt)  # right
-                _draw_dashed_line(s, c, (0, 0), (0, y), lt, dt)  # left
-                _draw_dashed_line(s, c, (x, y - lt), (0, y - lt), lt, dt)  # bot
-                _draw_dashed_line(s, c, (0, 0), (x, 0), lt, dt)  # top
-            else:
-                _draw_dashed_line(s, c, (x - lt, 0), (x - lt, y), lt, dt)  # right
-                _draw_dashed_line(s, c, (0, y), (0, 0), lt, dt)  # left
-                _draw_dashed_line(s, c, (0, y - lt), (x, y - lt), lt, dt)  # bot
-                _draw_dashed_line(s, c, (x, 0), (0, 0), lt, dt)  # top
+            # right line animates bottom to top
+            if self.right_go:
+                ry = y - self.ro + l
+                rl = max(ry - l, 0)
+                pygame.draw.line(s, c, (x - t, rl), (x - t, ry), t)
+                if (y - self.ro) < (0 - l // 2):
+                    self.top_go = True
+                if (y - self.ro) < (0 - l):
+                    self.ro = 0
+                    self.right_go = False
+                self.ro += hl_vel
+            # left line animates top to bottom
+            if self.left_go:
+                ly = y - self.lo
+                ll = max(ly - l, 0)
+                pygame.draw.line(s, c, (0, ll), (0, ly), t)
+                if (y - self.lo) > (self.rect.size[1] + l // 2):
+                    self.bot_go = True
+                if (y - self.lo) > (self.rect.size[1] + l):
+                    self.lo = self.rect.size[1]
+                    self.left_go = False
+                self.lo -= hl_vel
+            # bottom line animates ----> left to right
+            if self.bot_go:
+                bx = x - self.bo
+                bl = max(bx - l, 0)
+                pygame.draw.line(s, c, (bl, y - t), (bx, y - t), t)
+                if (x - self.bo) > (self.rect.size[0] + l // 2):
+                    self.right_go = True
+                if (x - self.bo) > (self.rect.size[0] + l):
+                    self.bo = self.rect.size[0]
+                    self.bot_go = False
+                self.bo -= hl_vel
+            # top line animates <---- right to left
+            if self.top_go:
+                if (x - self.to) < (0 - l // 2):
+                    self.left_go = True
+                if (x - self.to) < (0 - l):
+                    self.to = 0
+                    self.top_go = False
+                tx = x - self.to + l
+                tl = max(tx - l, 0)
+                self.to += hl_vel
+                pygame.draw.line(s, c, (tl, 0), (tx, 0), t)
+            # text for button
             btn_text = value.GAME_FONT.render(self.name, 1, c)
         self.display.draw(self.my_surface, self.rect.topleft)
         self.display.draw(btn_text, (self.rect.centerx - off_x // 2, self.rect.centery - off_y // 2))
@@ -157,8 +156,19 @@ class Button:
                 self.clicked = True
         elif self.highlight:
             self.highlight = False
+            self.reset_anim()
 
         if not pygame.mouse.get_pressed()[0]:
             self.clicked = False
 
         return action
+
+    def reset_anim(self):
+        self.to = 0  # top offset for highlight line
+        self.bo = self.rect.size[0]
+        self.lo = self.rect.size[1]
+        self.ro = 0
+        self.top_go = True
+        self.bot_go = True
+        self.left_go = False
+        self.right_go = False
