@@ -8,6 +8,7 @@ TILE_SIZE_MULT = 3  # tile size multiplier to increase how large the sprites are
 MAP_DATA = list()  # the data that gets read to form maps
 BUTTONS = list()  # the currently available buttons
 SPRITES = {}
+SOUNDS = {}
 CONTEXT_MAIN_MENU = True  # context flags change the state of the game
 CONTEXT_DOWNTIME = False
 CONTEXT_MEET = False

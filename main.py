@@ -1,7 +1,7 @@
 
 ## MAIN GAME FILE ##
 
-import pygame
+import pygame, os
 from pygame.locals import *
 import game_objects as objects
 import game_load as load
@@ -9,8 +9,12 @@ import game_render as render
 import game_control as control
 import game_values as value
 
-# TODO: make buttons that don't suck
+# TODO: select new font(s) to use that arent the system default
+# TODO: add zoom to map
 # TODO: add highlights to tops of tiles on hover
+# TODO: expand default map in size
+# TODO: decide what numbers that aren't 0 or 1 mean in a map file
+# TODO: make some actual tiles
 # TODO: add movable character to map
 # TODO: add vision to character
 # TODO: change sprites out of vision to greyscale
@@ -34,9 +38,6 @@ main_surface = pygame.Surface((DIS_W, DIS_H))  # main_surface where things are r
 
 def main():
     # VARIABLES
-    # fonts
-    value.GAME_FONT = pygame.font.SysFont(pygame.font.get_default_font(), 40)  # default font, use for info displays
-
     # location variables
     top_left = (0, 0)  # coordinates for top left of main_surface
     main_menu_size = (DIS_W // 5, DIS_H - 20)  # menu my_surface size
@@ -66,8 +67,14 @@ def main():
     pause_menu_display = objects.Display('', pause_menu_size, pause_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
     mission_display = objects.Display('Mission', map_iso_size, map_iso_loc, value.RED, value.BLACK, value.BLACK, main_surface)
 
-    #load initial values
+    # load initial values
+    value.GAME_FONT = pygame.font.SysFont(pygame.font.get_default_font(), 40)  # default font, use for info displays
+    #value.GAME_FONT = pygame.font.Font(os.path.join('assets', 'fonts', '8801-DKnR.ttf'), 40)
+    #value.GAME_FONT = pygame.font.Font(os.path.join('assets', 'fonts', '9801-qMy5.ttf'), 40)
+    #value.GAME_FONT = pygame.font.Font(os.path.join('assets', 'fonts', 'AtlantisInternational-jen0.ttf'), 40)
+    #value.GAME_FONT = pygame.font.Font(os.path.join('assets', 'fonts', 'Rennacs-WW14.ttf'), 40)
     load.load_sprites()
+    load.load_sounds()
 
     # MAIN GAME LOOP
     while game_running:

@@ -78,6 +78,7 @@ class Button:
         self.bot_go = True
         self.left_go = False
         self.right_go = False
+        self.hover_sound = value.SOUNDS['button hover']
 
     def draw(self):
         self.my_surface.fill(self.display.get_fill())
@@ -151,11 +152,15 @@ class Button:
         if self.rect.collidepoint(self.display.get_relative_mouse_pos()):
             if not self.highlight:
                 self.highlight = True
+                self.scale_btn(1.2)
+                self.reset_anim()
+                self.hover_sound.play()
             if pygame.mouse.get_pressed()[0] and not self.clicked:  # left click
                 action = True
                 self.clicked = True
         elif self.highlight:
             self.highlight = False
+            self.scale_btn(1 / 1.2)
             self.reset_anim()
 
         if not pygame.mouse.get_pressed()[0]:
@@ -172,3 +177,12 @@ class Button:
         self.bot_go = True
         self.left_go = False
         self.right_go = False
+
+    def scale_btn(self, z):
+        new_size = (self.rect.size[0] * z, self.rect.size[1] * z)
+        new_x = self.rect.centerx - (z * self.rect.size[0] // 2)
+        new_y = self.rect.centery - (z * self.rect.size[1] // 2)
+        new_loc = (new_x, new_y)
+        self.my_surface = pygame.Surface(new_size)
+        self.rect = self.my_surface.get_rect()
+        self.rect.topleft = new_loc

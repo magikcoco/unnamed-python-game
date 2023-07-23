@@ -4,6 +4,14 @@
 import pygame, os
 import game_values as value
 
+pygame.mixer.init()
+
+
+def load_sounds():
+    btn_hover = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'button-hover.ogg'))
+
+    value.SOUNDS['button hover'] = btn_hover
+
 
 def load_sprites():
     tile_w = 20 * value.TILE_SIZE_MULT  # base tile size times tile size multiplier, width

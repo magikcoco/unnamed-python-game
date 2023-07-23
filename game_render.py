@@ -6,16 +6,15 @@ import game_values as value
 
 
 def draw_main_menu(display):
-    top_pad = 30
-
-    # play button
-    btn_x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2
-    btn_y = 20
-    play_btn = objects.Button('play', value.BUTTON_SIZE, value.RED, value.WHITE, display, (btn_x, top_pad + btn_y * 1))
-    play_btn.draw()
-
-    # append all buttons to list
-    value.BUTTONS.append(play_btn)
+    top_pad = 50
+    buttons = ['PLAY', 'TEST']
+    x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2
+    btn_y = value.BUTTON_SIZE[1] + 20
+    for i in range(len(buttons)):
+        y = top_pad + btn_y * i
+        btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.RED, value.WHITE, display, (x, y))
+        btn.draw()
+        value.BUTTONS.append(btn)
 
     # set flags
     value.MAIN_MENU_DRAWN = True
