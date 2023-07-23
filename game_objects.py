@@ -1,8 +1,45 @@
+import math
 
 ## DEFINES CUSTOM OBJECTS FOR THE GAME ##
 
 import pygame
 import game_values as value
+
+
+class Point:
+    def __init__(self, point=(0, 0)):
+        self.x = int(point[0])
+        self.y = int(point[1])
+
+    def __add__(self, other):
+        return Point((self.x + other.x, self.y + other.y))
+
+    def __sub__(self, other):
+        return Point((self.x - other.x, self.y - other.y))
+
+    def __mul__(self, scalar):
+        return Point((self.x*scalar, self.y*scalar))
+
+    def __floordiv__(self, scalar):
+        return Point((self.x/scalar, self.y/scalar))
+
+    def __len__(self):
+        return int(math.sqrt(self.x**2 + self.y**2))
+
+    def get(self):
+        return (self.x, self.y)
+
+
+def _draw_dashed_line(surface, color, start_pos, end_pos, width=1, dash_length=10):
+    origin = Point(start_pos)
+    target = Point(end_pos)
+    displacement = target - origin
+    length = len(displacement)
+    slope = displacement//length
+    for i in range(0, length//dash_length, 2):
+        start = origin + (slope * i * dash_length)
+        end = origin + (slope * (i + 1) * dash_length)
+        pygame.draw.line(surface, color, start.get(), end.get(), width)
 
 
 class Display:
@@ -45,6 +82,9 @@ class Display:
         self.location[0] = x
         self.location[1] = y
 
+    def get_fill(self):
+        return self.fill_color
+
     def get_relative_mouse_pos(self):
         m_pos = pygame.mouse.get_pos()
         return m_pos[0] - self.location[0], m_pos[1] - self.location[1]
@@ -67,20 +107,43 @@ class Button:
         self.highlight = False
         self.color = color
         self.color_hl = color_hl
+        self.hl_flag = True
+        self.hl_tick = 10
+        self.hl_tick_c = self.hl_tick
 
     def draw(self):
+        self.my_surface.fill(self.display.get_fill())
         x = self.rect.size[0]
         y = self.rect.size[1]
         off_x, off_y = value.GAME_FONT.size(self.name)
-        lt = 1  # line thickness
-        color = self.color
-        if self.highlight:
-            color = self.color_hl
-        pygame.draw.line(self.my_surface, color, (x - lt, 0), (x - lt, y), lt)  # right
-        pygame.draw.line(self.my_surface, color, (0, 0), (0, y), lt)  # left
-        pygame.draw.line(self.my_surface, color, (0, y - lt), (x, y - lt), lt)  # bot
-        pygame.draw.line(self.my_surface, color, (0, 0), (x, 0), lt)  # top
-        btn_text = value.GAME_FONT.render(self.name, 1, color)
+        lt = 2  # line thickness
+        dt = 40
+        s = self.my_surface
+        if not self.highlight:
+            c = self.color
+            pygame.draw.line(s, c, (x - lt, 0), (x - lt, y), lt)  # right
+            pygame.draw.line(s, c, (0, 0), (0, y), lt)  # left
+            pygame.draw.line(s, c, (0, y - lt), (x, y - lt), lt)  # bot
+            pygame.draw.line(s, c, (0, 0), (x, 0), lt)  # top
+            btn_text = value.GAME_FONT.render(self.name, 1, self.color)
+        else:
+            c = self.color_hl
+            if not self.hl_tick_c:
+                self.hl_tick_c = self.hl_tick
+                self.hl_flag = not self.hl_flag
+            else:
+                self.hl_tick_c -= 1
+            if self.hl_flag:
+                _draw_dashed_line(s, c, (x - lt, y), (x - lt, 0), lt, dt)  # right
+                _draw_dashed_line(s, c, (0, 0), (0, y), lt, dt)  # left
+                _draw_dashed_line(s, c, (x, y - lt), (0, y - lt), lt, dt)  # bot
+                _draw_dashed_line(s, c, (0, 0), (x, 0), lt, dt)  # top
+            else:
+                _draw_dashed_line(s, c, (x - lt, 0), (x - lt, y), lt, dt)  # right
+                _draw_dashed_line(s, c, (0, y), (0, 0), lt, dt)  # left
+                _draw_dashed_line(s, c, (0, y - lt), (x, y - lt), lt, dt)  # bot
+                _draw_dashed_line(s, c, (x, 0), (0, 0), lt, dt)  # top
+            btn_text = value.GAME_FONT.render(self.name, 1, c)
         self.display.draw(self.my_surface, self.rect.topleft)
         self.display.draw(btn_text, (self.rect.centerx - off_x // 2, self.rect.centery - off_y // 2))
 

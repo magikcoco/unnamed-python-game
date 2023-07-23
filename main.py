@@ -2,6 +2,7 @@
 ## MAIN GAME FILE ##
 
 import pygame
+from pygame.locals import *
 import game_objects as objects
 import game_load as load
 import game_render as render
@@ -59,7 +60,6 @@ def main():
     # set defaults
     value.ISO_OFFSET_X = map_iso_size[0] / 2  # default location
     value.ISO_OFFSET_Y = map_iso_size[1] / 2  # where top place iso map on the map main_surface, y dimension
-    value.DEBUG_MODE = True
 
     # set displays
     main_menu_display = objects.Display('main menu', main_menu_size, main_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
@@ -75,6 +75,9 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # close the window
                 game_running = False  # ends main game loop
+            if event.type == pygame.KEYUP:
+                if event.key == K_F1:
+                    value.DEBUG_MODE = not value.DEBUG_MODE
 
         # CONTROLS
         # key events

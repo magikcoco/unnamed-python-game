@@ -11,7 +11,7 @@ def draw_main_menu(display):
     # play button
     btn_x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2
     btn_y = 20
-    play_btn = objects.Button('play', value.BUTTON_SIZE, value.WHITE, value.RED, display, (btn_x, top_pad + btn_y * 1))
+    play_btn = objects.Button('play', value.BUTTON_SIZE, value.RED, value.WHITE, display, (btn_x, top_pad + btn_y * 1))
     play_btn.draw()
 
     # append all buttons to list
@@ -27,7 +27,7 @@ def draw_pause_menu(display):
     # quit button
     btn_x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2
     btn_y = 20
-    pause_btn = objects.Button('quit', value.BUTTON_SIZE, value.WHITE, value.RED, display, (btn_x, top_pad + btn_y * 1))
+    pause_btn = objects.Button('quit', value.BUTTON_SIZE, value.RED, value.WHITE, display, (btn_x, top_pad + btn_y * 1))
     pause_btn.draw()
 
     # append all buttons to list
