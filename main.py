@@ -1,14 +1,19 @@
 
 ## MAIN GAME FILE ##
 
-import pygame
+import pygame, os
+from pygame.locals import *
 import game_objects as objects
 import game_load as load
 import game_render as render
 import game_control as control
 import game_values as value
 
+# TODO: add zoom to map
 # TODO: add highlights to tops of tiles on hover
+# TODO: expand default map in size
+# TODO: decide what numbers that aren't 0 or 1 mean in a map file
+# TODO: make some actual tiles
 # TODO: add movable character to map
 # TODO: add vision to character
 # TODO: change sprites out of vision to greyscale
@@ -32,41 +37,39 @@ main_surface = pygame.Surface((DIS_W, DIS_H))  # main_surface where things are r
 
 def main():
     # VARIABLES
-    # fonts
-    value.GAME_FONT = pygame.font.SysFont(pygame.font.get_default_font(), 40)  # default font, use for info displays
-
     # location variables
-    top_left = (0, 0)  # coordinates for top left of main_surface
-    main_menu_size = (DIS_W // 5, DIS_H - 20)  # menu my_surface size
-    main_menu_loc = (10, 10)  # from top left corner
-    pause_menu_size = (DIS_W // 5 * 2, DIS_H // 3 * 2)
-    pause_menu_loc = (DIS_W // 2 - pause_menu_size[0] // 2, DIS_H // 2 - pause_menu_size[1] // 2)
-    map_iso_size = (DIS_W // 5 * 3, DIS_H - 20)  # map main_surface my_surface size
-    map_iso_loc = (DIS_W // 2 - map_iso_size[0] // 2, 10)  # middle third of screen
+    # main menu
+    main_menu_size = (DIS_W // 5, DIS_H - 20)  # size
+    main_menu_loc = (10, 10)  # location on main_surface
+    # pause menu
+    pause_menu_size = (DIS_W // 5 * 2, DIS_H // 3 * 2)  # size
+    pause_menu_loc = (DIS_W // 2 - pause_menu_size[0] // 2, DIS_H // 2 - pause_menu_size[1] // 2)  # location
+    # mission map
+    map_iso_size = (DIS_W // 5 * 3, DIS_H - 20)  # size
+    map_iso_loc = (DIS_W // 2 - map_iso_size[0] // 2, 10)  # location
 
     # integer values
     dt = 0  # delta time is milliseconds since last frame
     rt = 0  # raw time is milliseconds since last frame excluding frame lock delay
-    fps = 24  # default to 24 fps
-
-    # data structures
-    last_frame_keys = pygame.key.get_pressed()
+    fps = 24  # frames per second the main game is locked to
 
     # local flags
-    game_running = True
+    game_running = True  # for the main game loop
 
     # set defaults
     value.ISO_OFFSET_X = map_iso_size[0] / 2  # default location
     value.ISO_OFFSET_Y = map_iso_size[1] / 2  # where top place iso map on the map main_surface, y dimension
-    value.DEBUG_MODE = True
 
     # set displays
-    main_menu_display = objects.Display('main menu', main_menu_size, main_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
+    main_menu_display = objects.Display('Main Menu', main_menu_size, main_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
     pause_menu_display = objects.Display('', pause_menu_size, pause_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
     mission_display = objects.Display('Mission', map_iso_size, map_iso_loc, value.RED, value.BLACK, value.BLACK, main_surface)
 
-    #load initial values
+    # load initial values
+    value.GAME_FONT = pygame.font.Font(os.path.join('assets', 'fonts', 'AtlantisInternational-jen0.ttf'), 30)
     load.load_sprites()
+    load.load_sounds()
+    last_frame_keys = pygame.key.get_pressed()
 
     # MAIN GAME LOOP
     while game_running:
@@ -74,6 +77,9 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # close the window
                 game_running = False  # ends main game loop
+            if event.type == pygame.KEYUP:
+                if event.key == K_F1:
+                    value.DEBUG_MODE = not value.DEBUG_MODE  # toggle debug mode
 
         # CONTROLS
         # key events
@@ -83,14 +89,12 @@ def main():
         last_frame_keys = keys  # keep these keys to track changes in next frame
 
         # mouse
-        mouse_pos = pygame.mouse.get_pos()
         if value.CONTEXT_MAIN_MENU:
             control.check_button_collisions()
         elif value.GAME_PAUSE:
             control.check_button_collisions()
 
         # GAME LOGIC
-        # load map if not already
 
         # RENDER GAME
         # fill screen to wipe away last frame
@@ -105,7 +109,7 @@ def main():
                 button.draw()
             main_menu_display.render()
         # game pause
-        elif value.GAME_PAUSE:
+        elif value.GAME_PAUSE:  # pause menu should draw instead of anything else
             if not value.PAUSE_MENU_DRAWN:
                 render.draw_pause_menu(pause_menu_display)
             for button in value.BUTTONS:
@@ -119,16 +123,16 @@ def main():
             mission_display.render()
 
         # debug_mode overlay
-        if value.DEBUG_MODE:
+        if value.DEBUG_MODE:  # debug stuff draws on top of anything else being rendered
             dt_text = value.GAME_FONT.render('dt=' + str(dt) + 'ms', 1, value.WHITE)  # setup delta time text
             rt_text = value.GAME_FONT.render('rt=' + str(rt) + 'ms', 1, value.WHITE)  # setup raw time text
-            mouse_text = value.GAME_FONT.render('mp=' + str(mouse_pos), 1, value.WHITE)  # mouse position
-            main_surface.blit(dt_text, top_left)  # add delta time tracker to upper left
+            mouse_text = value.GAME_FONT.render('mp=' + str(pygame.mouse.get_pos()), 1, value.WHITE)  # mouse position
+            main_surface.blit(dt_text, (0, 0))  # add delta time tracker to upper left
             main_surface.blit(rt_text, (0, 25))  # add delta time tracker to upper left
             main_surface.blit(mouse_text, (0, 25 * 2))  # add mouse text
 
         # put work on the screen
-        screen.blit(pygame.transform.scale(main_surface, screen.get_size()), top_left)
+        screen.blit(pygame.transform.scale(main_surface, screen.get_size()), (0, 0))  # put the display onto the screen
         pygame.display.update()  # update main_surface
 
         # FRAME LOCK / METRICS

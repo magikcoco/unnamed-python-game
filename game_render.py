@@ -1,44 +1,35 @@
 
 ## CONTAINS FUNCTIONS FOR RENDERING THINGS IN GAME ##
 
-import pygame
 import game_objects as objects
 import game_values as value
 
 
 def draw_main_menu(display):
-    # button scale
-    btn_scale = (display.get_width()//2, int(0.41 * display.get_width()//2))
-    #play button
-    play_btn_sprite = pygame.transform.scale(value.SPRITES['play button'], btn_scale)
-    play_btn_sprite_hl = pygame.transform.scale(value.SPRITES['play button highlight'], btn_scale)
-    play_btn_group = (play_btn_sprite, play_btn_sprite_hl)
-    btn_x = display.get_width() // 2 - play_btn_sprite.get_width() // 2
-    btn_y = 50
-    play_btn = objects.Button('play', display, (btn_x, btn_y + 20 * 0), play_btn_group)
-    play_btn.draw()
-
-    # append all buttons to play
-    value.BUTTONS.append(play_btn)
+    top_pad = 50  # the pad from the top of the display, for its border
+    buttons = ['PLAY', 'TEST']  # the buttons to put on this menu
+    x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2  # the x coordinate of these buttons
+    btn_y = value.BUTTON_SIZE[1] + 20  # the amount of space between buttons
+    for i in range(len(buttons)):  # draw the buttons
+        y = top_pad + btn_y * i  # incrementing the y
+        btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.RED, value.WHITE, display, (x, y))
+        btn.draw()
+        value.BUTTONS.append(btn)  # add the button to the proper data structure
 
     # set flags
     value.MAIN_MENU_DRAWN = True
 
 
 def draw_pause_menu(display):
-    # button scale
-    btn_scale = (display.get_width() // 3, int(0.41 * display.get_width() // 3))
-    # pause button
-    pause_btn_sprite = pygame.transform.scale(value.SPRITES['play button'], btn_scale)  # TODO: make a pause button sprite
-    pause_btn_sprite_hl = pygame.transform.scale(value.SPRITES['play button highlight'], btn_scale)
-    pause_btn_group = (pause_btn_sprite, pause_btn_sprite_hl)
-    btn_x = display.get_width() // 2 - pause_btn_sprite.get_width() // 2
-    btn_y = 30
-    pause_btn = objects.Button('quit to main menu', display, (btn_x, btn_y + 20 * 0), pause_btn_group)
-    pause_btn.draw()
-
-    # append all buttons to play
-    value.BUTTONS.append(pause_btn)
+    top_pad = 30
+    buttons = ['MAIN MENU', 'TEST']
+    x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2
+    btn_y = value.BUTTON_SIZE[1] + 20
+    for i in range(len(buttons)):
+        y = top_pad + btn_y * i
+        btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.RED, value.WHITE, display, (x, y))
+        btn.draw()
+        value.BUTTONS.append(btn)
 
     # set flags
     value.PAUSE_MENU_DRAWN = True
