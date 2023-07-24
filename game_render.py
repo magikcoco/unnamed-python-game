@@ -6,8 +6,23 @@ import game_values as value
 
 
 def draw_main_menu(display):
-    top_pad = 50
-    buttons = ['PLAY', 'TEST']
+    top_pad = 50  # the pad from the top of the display, for its border
+    buttons = ['PLAY', 'TEST']  # the buttons to put on this menu
+    x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2  # the x coordinate of these buttons
+    btn_y = value.BUTTON_SIZE[1] + 20  # the amount of space between buttons
+    for i in range(len(buttons)):  # draw the buttons
+        y = top_pad + btn_y * i  # incrementing the y
+        btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.RED, value.WHITE, display, (x, y))
+        btn.draw()
+        value.BUTTONS.append(btn)  # add the button to the proper data structure
+
+    # set flags
+    value.MAIN_MENU_DRAWN = True
+
+
+def draw_pause_menu(display):
+    top_pad = 30
+    buttons = ['MAIN MENU', 'TEST']
     x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2
     btn_y = value.BUTTON_SIZE[1] + 20
     for i in range(len(buttons)):
@@ -15,22 +30,6 @@ def draw_main_menu(display):
         btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.RED, value.WHITE, display, (x, y))
         btn.draw()
         value.BUTTONS.append(btn)
-
-    # set flags
-    value.MAIN_MENU_DRAWN = True
-
-
-def draw_pause_menu(display):
-    top_pad = 10
-
-    # quit button
-    btn_x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2
-    btn_y = 20
-    pause_btn = objects.Button('quit', value.BUTTON_SIZE, value.RED, value.WHITE, display, (btn_x, top_pad + btn_y * 1))
-    pause_btn.draw()
-
-    # append all buttons to list
-    value.BUTTONS.append(pause_btn)
 
     # set flags
     value.PAUSE_MENU_DRAWN = True
