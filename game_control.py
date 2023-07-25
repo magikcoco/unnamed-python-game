@@ -25,6 +25,14 @@ def check_button_collisions():
                 value.BUTTONS.clear()
 
 
+def handle_iso_zoom(m_wheel):
+    if (value.TILE_SIZE_MULT+m_wheel) <= 9:
+        if m_wheel >= 0:
+            value.TILE_SIZE_MULT += m_wheel
+        elif (value.TILE_SIZE_MULT + m_wheel) > 1:
+            value.TILE_SIZE_MULT += m_wheel
+
+
 def handle_iso_movement(keys, last_frame_keys):
     map_vel = 10  # speed at which the map moves
 
