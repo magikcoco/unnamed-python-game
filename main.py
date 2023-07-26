@@ -9,7 +9,6 @@ import game_render as render
 import game_control as control
 import game_values as value
 
-# TODO: add zoom to map
 # TODO: add highlights to tops of tiles on hover
 # TODO: expand default map in size
 # TODO: decide what numbers that aren't 0 or 1 mean in a map file
@@ -57,6 +56,7 @@ def main():
     game_running = True  # for the main game loop
 
     # set defaults
+
     value.ISO_OFFSET_X = map_iso_size[0] / 2  # default location
     value.ISO_OFFSET_Y = map_iso_size[1] / 2  # where top place iso map on the map main_surface, y dimension
 
@@ -73,6 +73,8 @@ def main():
 
     # MAIN GAME LOOP
     while game_running:
+        m_wheel = 0
+
         # EVENTS
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # close the window
@@ -80,6 +82,8 @@ def main():
             if event.type == pygame.KEYUP:
                 if event.key == K_F1:
                     value.DEBUG_MODE = not value.DEBUG_MODE  # toggle debug mode
+            if event.type == pygame.MOUSEWHEEL:
+                m_wheel = event.y
 
         # CONTROLS
         # key events
@@ -93,6 +97,8 @@ def main():
             control.check_button_collisions()
         elif value.GAME_PAUSE:
             control.check_button_collisions()
+        elif value.CONTEXT_MISSION:
+            control.handle_iso_zoom(m_wheel)
 
         # GAME LOGIC
 

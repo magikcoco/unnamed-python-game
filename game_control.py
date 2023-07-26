@@ -13,6 +13,7 @@ def check_button_collisions():
                 value.CONTEXT_MISSION = True  # TODO: change the flag when new contexts are made
                 value.MAIN_MENU_DRAWN = False  # main menu not drawn anymore
                 value.BUTTONS.clear()  # clear the main menu buttons out
+                restore_default_values()  # restore all default values used by the game
             elif button.name == 'MAIN MENU':  # pause menu main menu button, quits to main menu
                 value.CONTEXT_MAIN_MENU = True
                 value.CONTEXT_DOWNTIME = False
@@ -23,6 +24,18 @@ def check_button_collisions():
                 value.GAME_PAUSE = False
                 value.PAUSE_MENU_DRAWN = False
                 value.BUTTONS.clear()
+
+
+def restore_default_values():
+    value.TILE_SIZE_MULT = 3
+
+
+def handle_iso_zoom(m_wheel):
+    if (value.TILE_SIZE_MULT+m_wheel) <= 9:
+        if m_wheel >= 0:
+            value.TILE_SIZE_MULT += m_wheel
+        elif (value.TILE_SIZE_MULT + m_wheel) > 1:
+            value.TILE_SIZE_MULT += m_wheel
 
 
 def handle_iso_movement(keys, last_frame_keys):
