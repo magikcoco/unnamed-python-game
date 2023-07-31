@@ -206,3 +206,71 @@ class Button:  # button for pressing and making things happen
         self.my_surface = pygame.Surface(new_size)  # make a new surface of the new size
         self.rect = self.my_surface.get_rect()  # get its rectangle
         self.rect.topleft = new_loc  # place that rectangle at the new position
+
+
+class Isotile:
+    def __init__(self, tile_sprite, scale, display, point):
+        self.scale = scale  # scale of this tile
+        self.base_w = 20 * scale  # base width of a tile
+        self.base_h = 24 * scale  # base height of a tile
+        self.display = display
+        self.surface = pygame.transform.scale(tile_sprite, (self.base_w, self.base_h))
+        self.scale = scale  # scale of this tile
+        self.point = point
+
+    def draw(self):
+        self.display.draw(self.surface, self.point)
+
+
+class Isomap:
+    def __init__(self, mapdata, display):
+        #passed
+        self.mapdata = mapdata
+        self.display = display
+
+        # changes
+        self.scale = 2
+        self.offset_x = self.display.get_width() // 2
+        self.offset_y = self.display.get_height() // 2
+
+        #default, declare the first time
+        self.tiles = dict()
+        self.iso_x = 10 * self.scale
+        self.iso_y = 5 * self.scale
+        self.iso_z = 13 * self.scale
+
+    def scale_map(self, scalar):
+        self.scale = scalar
+
+    def reset_values(self):
+        self.tiles = dict()
+        self.iso_x = 10 * self.scale
+        self.iso_y = 5 * self.scale
+        self.iso_z = 13 * self.scale
+
+    def convert_coordinates(self, x, y, z=False):
+        conv_x = self.offset_x + x * self.iso_x - y * self.iso_x
+        conv_y = self.offset_y + x * self.iso_y + y * self.iso_y
+        if z:
+            conv_y -= self.iso_z
+        return conv_x, conv_y
+
+    def turn_clockwise(self):
+        self.mapdata = list(zip(*self.mapdata[::-1]))  # clockwise
+
+    def turn_counterclockwise(self):
+        self.mapdata = list(zip(*self.mapdata))[::-1]  # counterclockwise
+
+    def update_tiles(self):  # TODO: tiles other than default
+        self.reset_values()
+        for y, row in enumerate(self.mapdata):  # data y axis
+            for x, tile in enumerate(row):  # data x axis
+                iso_pnt = self.convert_coordinates(x, y)
+                self.tiles[iso_pnt] = Isotile(value.SPRITES['default tile'], self.scale, self.display, iso_pnt)
+                if tile == 1:
+                    iso_pnt = self.convert_coordinates(x, y, True)  # if one, z shift for wall tile
+                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default tile'], self.scale, self.display, iso_pnt)
+
+    def draw(self):
+        for tile in self.tiles.values():
+            tile.draw()

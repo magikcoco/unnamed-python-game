@@ -55,11 +55,6 @@ def main():
     # local flags
     game_running = True  # for the main game loop
 
-    # set defaults
-
-    value.ISO_OFFSET_X = map_iso_size[0] / 2  # default location
-    value.ISO_OFFSET_Y = map_iso_size[1] / 2  # where top place iso map on the map main_surface, y dimension
-
     # set displays
     main_menu_display = objects.Display('Main Menu', main_menu_size, main_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
     pause_menu_display = objects.Display('', pause_menu_size, pause_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
@@ -124,8 +119,11 @@ def main():
         elif value.CONTEXT_MISSION:
             if not value.ISO_MAP_LOADED:
                 load.load_map('default.txt')
+                value.CUR_ISO_MAP = objects.Isomap(value.MAP_DATA, mission_display)
+                value.ISO_MAP_LOADED = True  # switch flag
             if value.ISO_MAP_LOADED:
-                render.render_visible_map(mission_display)
+                value.CUR_ISO_MAP.update_tiles()
+                value.CUR_ISO_MAP.draw()
             mission_display.render()
 
         # debug_mode overlay
