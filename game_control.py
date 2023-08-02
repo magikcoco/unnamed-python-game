@@ -13,7 +13,6 @@ def check_button_collisions():
                 value.CONTEXT_MISSION = True  # TODO: change the flag when new contexts are made
                 value.MAIN_MENU_DRAWN = False  # main menu not drawn anymore
                 value.BUTTONS.clear()  # clear the main menu buttons out
-                restore_default_values()  # restore all default values used by the game
             elif button.name == 'MAIN MENU':  # pause menu main menu button, quits to main menu
                 value.CONTEXT_MAIN_MENU = True
                 value.CONTEXT_DOWNTIME = False
@@ -26,16 +25,10 @@ def check_button_collisions():
                 value.BUTTONS.clear()
 
 
-def restore_default_values():
-    value.TILE_SIZE_MULT = 3
-
-
 def handle_iso_zoom(m_wheel):
-    if (value.TILE_SIZE_MULT+m_wheel) <= 9:
-        if m_wheel >= 0:
-            value.TILE_SIZE_MULT += m_wheel
-        elif (value.TILE_SIZE_MULT + m_wheel) > 1:
-            value.TILE_SIZE_MULT += m_wheel
+    scalar = value.CUR_ISO_MAP.scale + m_wheel
+    if (scalar <= 9) and (scalar > 1):
+        value.CUR_ISO_MAP.scale_map(scalar)
 
 
 def handle_iso_movement(keys, last_frame_keys):
@@ -51,16 +44,16 @@ def handle_iso_movement(keys, last_frame_keys):
     if not value.GAME_PAUSE:
         # lateral movement keys, should be continuous
         if keys[pygame.K_UP]:  # map up
-            value.ISO_OFFSET_Y -= map_vel
+            value.CUR_ISO_MAP.offset_y -= map_vel
         if keys[pygame.K_DOWN]:  # map down
-            value.ISO_OFFSET_Y += map_vel
+            value.CUR_ISO_MAP.offset_y += map_vel
         if keys[pygame.K_LEFT]:  # map left
-            value.ISO_OFFSET_X -= map_vel
+            value.CUR_ISO_MAP.offset_x -= map_vel
         if keys[pygame.K_RIGHT]:  # map right
-            value.ISO_OFFSET_X += map_vel
+            value.CUR_ISO_MAP.offset_x += map_vel
 
         # rotation keys, should not be continuous
         if keys[pygame.K_LCTRL] and not last_frame_keys[pygame.K_LCTRL]:
-            value.MAP_DATA = list(zip(*value.MAP_DATA))[::-1]  # counterclockwise
+            value.CUR_ISO_MAP.turn_counterclockwise()
         if keys[pygame.K_RCTRL] and not last_frame_keys[pygame.K_RCTRL]:
-            value.MAP_DATA = list(zip(*value.MAP_DATA[::-1]))  # clockwise
+            value.CUR_ISO_MAP.turn_clockwise()

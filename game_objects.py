@@ -206,3 +206,136 @@ class Button:  # button for pressing and making things happen
         self.my_surface = pygame.Surface(new_size)  # make a new surface of the new size
         self.rect = self.my_surface.get_rect()  # get its rectangle
         self.rect.topleft = new_loc  # place that rectangle at the new position
+
+
+class Isotile:
+    frame = 0
+    hl_frame = 0
+
+    def __init__(self, tile_sprite, scale, display, point, can_highlight=True):
+        for i in range(len(tile_sprite)):
+            tile_sprite[i-1] = pygame.transform.scale(tile_sprite[i-1], (20 * scale, 24 * scale))
+        self.surface = tile_sprite[Isotile.frame]
+        self.anim_seq = tile_sprite
+        self.scale = scale
+        self.display = display
+        self.point = point
+        highlight = pygame.transform.scale(value.SPRITES['highlight'][0], (20 * self.scale, 11 * self.scale))
+        self.hl_rect = highlight.get_rect(topleft=point)
+        self.can_hl = can_highlight
+        self.made_sound = False
+
+    def detect_mouse_hover(self):
+        hover = False
+        # mouse location
+        mx, my = self.display.get_relative_mouse_pos()
+        # listed clockwise from left corner, vertices of collision area
+        vertices = [
+            (self.point[0] + (0 * self.scale), self.point[1] + (5 * self.scale)),  # left corner
+            (self.point[0] + (8 * self.scale), self.point[1] + (0 * self.scale)),  # top corners
+            (self.point[0] + (11 * self.scale), self.point[1] + (0 * self.scale)),
+            (self.point[0] + (19 * self.scale), self.point[1] + (5 * self.scale)),  # right corner
+            (self.point[0] + (11 * self.scale), self.point[1] + (9 * self.scale)),  # bottom corners
+            (self.point[0] + (8 * self.scale), self.point[1] + (9 * self.scale))
+        ]
+        n = len(vertices)
+        p1x, p1y = vertices[0]
+        for i in range(n + 1):
+            p2x, p2y = vertices[i % n]
+            if my > min(p1y, p2y):
+                if my <= max(p1y, p2y):
+                    if mx <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xinters = (my - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or mx <= xinters:
+                            hover = not hover
+            p1x, p1y = p2x, p2y
+        return hover
+
+    def draw(self):
+        pygame.draw.rect(self.surface, (255, 0, 0), self.hl_rect)
+        self.display.draw(self.surface, self.point)
+
+    def draw_hl(self):
+        if self.can_hl:
+            if self.detect_mouse_hover():
+                highlight = pygame.transform.scale(value.SPRITES['highlight'][Isotile.hl_frame], (20 * self.scale, 11 * self.scale))
+                self.display.draw(highlight, self.point)
+                return True
+        return False
+
+
+class Isomap:
+    def __init__(self, mapdata, display):
+        #passed
+        self.mapdata = mapdata
+        self.display = display
+
+        # changes
+        self.scale = 2
+        self.offset_x = self.display.get_width() // 2
+        self.offset_y = self.display.get_height() // 2
+
+        #default, declare the first time
+        self.tiles = dict()
+        self.iso_x = 10 * self.scale
+        self.iso_y = 5 * self.scale
+        self.iso_z = 14 * self.scale
+
+    def convert_coordinates(self, x, y):
+        conv_x = self.offset_x + x * self.iso_x - y * self.iso_x
+        conv_y = self.offset_y + x * self.iso_y + y * self.iso_y
+        return conv_x, conv_y
+
+    def z_shift(self, point, level):
+        z_shift_y = point[1] - (self.iso_z * level)
+        return point[0], z_shift_y
+
+    def reset_values(self):
+        self.tiles = dict()
+        self.iso_x = 10 * self.scale
+        self.iso_y = 5 * self.scale
+        self.iso_z = 14 * self.scale
+
+    def update_tiles(self):  # TODO: tiles other than default
+        self.reset_values()
+        for y, row in enumerate(self.mapdata):  # data y axis
+            for x, tile in enumerate(row):  # data x axis
+                if tile:
+                    iso_pnt = self.convert_coordinates(x, y)
+                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default'], self.scale, self.display, iso_pnt, can_highlight=False)
+                    iso_pnt = self.z_shift(iso_pnt, tile)
+                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default'], self.scale, self.display, iso_pnt, can_highlight=False)
+                else:
+                    iso_pnt = self.convert_coordinates(x, y)
+                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default'], self.scale, self.display, iso_pnt)
+
+    def scale_map(self, scalar):  # TODO: find a way to do this that doesnt have a big impact on calculation time
+        self.scale = scalar
+        self.update_tiles()
+
+    def turn_clockwise(self):
+        self.mapdata = list(zip(*self.mapdata[::-1]))  # clockwise
+        self.update_tiles()
+
+    def turn_counterclockwise(self):
+        self.mapdata = list(zip(*self.mapdata))[::-1]  # counterclockwise
+        self.update_tiles()
+
+    def draw(self):
+        # draw all the tiles
+        for tile in self.tiles.values():
+            tile.draw()
+        for tile in self.tiles.values():
+            if tile.draw_hl():
+                break
+
+        # move through frames of animation, we call this method every frame
+        if Isotile.frame < value.TILE_ANIM_LEN:
+            Isotile.frame += 1
+        else:
+            Isotile.frame = 0
+        if Isotile.hl_frame < value.TILE_HL_ANIM_LEN:
+            Isotile.hl_frame += 1
+        else:
+            Isotile.hl_frame = 0
