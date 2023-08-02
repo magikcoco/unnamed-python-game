@@ -1,6 +1,8 @@
 
 ## THIS FILE IS FOR VALUES THAT NEED TO ACCESSED ACROSS PYTHON SCRIPTS ##
 
+TILE_ANIM_LEN = 0
+TILE_HL_ANIM_LEN = 0
 BUTTON_SIZE = (160, 65)
 MAP_DATA = list()  # the data that gets read to form maps
 BUTTONS = list()  # the currently available buttons

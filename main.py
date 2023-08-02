@@ -9,12 +9,11 @@ import game_render as render
 import game_control as control
 import game_values as value
 
-# TODO: add highlights to tops of tiles on hover
-# TODO: expand default map in size
-# TODO: decide what numbers that aren't 0 or 1 mean in a map file
-# TODO: make some actual tiles
 # TODO: add movable character to map
 # TODO: add vision to character
+# TODO: Update default map
+# TODO: make some actual tiles
+# TODO: decide what numbers that aren't 0 or 1 mean in a map file
 # TODO: change sprites out of vision to greyscale
 
 # SETUP PYGAME
@@ -122,7 +121,6 @@ def main():
                 value.CUR_ISO_MAP = objects.Isomap(value.MAP_DATA, mission_display)
                 value.ISO_MAP_LOADED = True  # switch flag
             if value.ISO_MAP_LOADED:
-                value.CUR_ISO_MAP.update_tiles()
                 value.CUR_ISO_MAP.draw()
             mission_display.render()
 

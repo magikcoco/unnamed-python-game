@@ -16,6 +16,7 @@ def load_sounds():
 
 
 def load_sprites():
+    length_assigned = False
     # load tiles
     dir_path = os.path.join('assets', 'sprites', 'tiles')
     for item in os.listdir(dir_path):
@@ -28,6 +29,11 @@ def load_sprites():
                 frame.set_colorkey(value.COLORS['black'])
                 anim_seq.append(frame)
             value.SPRITES[item] = anim_seq
+            if str(item) == 'highlight':
+                value.TILE_HL_ANIM_LEN = len(anim_seq) - 1
+            elif not length_assigned:
+                value.TILE_ANIM_LEN = len(anim_seq) - 1
+                length_assigned = True
 
 
 def load_map(game_map):
