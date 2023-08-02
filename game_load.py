@@ -25,7 +25,7 @@ def load_sprites():
             anim_seq = list()
             for file in files:
                 frame = pygame.image.load(os.path.join(item_path, file))
-                frame.set_colorkey(value.BLACK)
+                frame.set_colorkey(value.COLORS['black'])
                 anim_seq.append(frame)
             value.SPRITES[item] = anim_seq
 

@@ -56,9 +56,9 @@ def main():
     game_running = True  # for the main game loop
 
     # set displays
-    main_menu_display = objects.Display('Main Menu', main_menu_size, main_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
-    pause_menu_display = objects.Display('', pause_menu_size, pause_menu_loc, value.RED, value.BLACK, value.BLACK, main_surface)
-    mission_display = objects.Display('Mission', map_iso_size, map_iso_loc, value.RED, value.BLACK, value.BLACK, main_surface)
+    main_menu_display = objects.Display('Main Menu', main_menu_size, main_menu_loc, value.COLORS['dis_blue'], value.COLORS['black'], value.COLORS['black'], main_surface)
+    pause_menu_display = objects.Display('', pause_menu_size, pause_menu_loc, value.COLORS['dis_blue'], value.COLORS['black'], value.COLORS['black'], main_surface)
+    mission_display = objects.Display('Mission', map_iso_size, map_iso_loc, value.COLORS['dis_blue'], value.COLORS['black'], value.COLORS['black'], main_surface)
 
     # load initial values
     value.GAME_FONT = pygame.font.Font(os.path.join('assets', 'fonts', 'AtlantisInternational-jen0.ttf'), 30)
@@ -99,7 +99,7 @@ def main():
 
         # RENDER GAME
         # fill screen to wipe away last frame
-        main_surface.fill(value.BLACK)  # fills screen with solid black
+        main_surface.fill(value.COLORS['black'])  # fills screen with solid black
 
         # conditionals
         # main menu
@@ -128,9 +128,9 @@ def main():
 
         # debug_mode overlay
         if value.DEBUG_MODE:  # debug stuff draws on top of anything else being rendered
-            dt_text = value.GAME_FONT.render('dt=' + str(dt) + 'ms', 1, value.WHITE)  # setup delta time text
-            rt_text = value.GAME_FONT.render('rt=' + str(rt) + 'ms', 1, value.WHITE)  # setup raw time text
-            mouse_text = value.GAME_FONT.render('mp=' + str(pygame.mouse.get_pos()), 1, value.WHITE)  # mouse position
+            dt_text = value.GAME_FONT.render('dt=' + str(dt) + 'ms', 1, value.COLORS['white'])  # setup delta time text
+            rt_text = value.GAME_FONT.render('rt=' + str(rt) + 'ms', 1, value.COLORS['white'])  # setup raw time text
+            mouse_text = value.GAME_FONT.render('mp=' + str(pygame.mouse.get_pos()), 1, value.COLORS['white'])  # mouse position
             main_surface.blit(dt_text, (0, 0))  # add delta time tracker to upper left
             main_surface.blit(rt_text, (0, 25))  # add delta time tracker to upper left
             main_surface.blit(mouse_text, (0, 25 * 2))  # add mouse text

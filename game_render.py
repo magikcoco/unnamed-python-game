@@ -13,7 +13,7 @@ def draw_main_menu(display):
     btn_y = value.BUTTON_SIZE[1] + 20  # the amount of space between buttons
     for i in range(len(buttons)):  # draw the buttons
         y = top_pad + btn_y * i  # incrementing the y
-        btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.RED, value.WHITE, display, (x, y))
+        btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.COLORS['dis_blue'], value.COLORS['white'], display, (x, y))
         btn.draw()
         value.BUTTONS.append(btn)  # add the button to the proper data structure
 
@@ -28,7 +28,7 @@ def draw_pause_menu(display):
     btn_y = value.BUTTON_SIZE[1] + 20
     for i in range(len(buttons)):
         y = top_pad + btn_y * i
-        btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.RED, value.WHITE, display, (x, y))
+        btn = objects.Button(buttons[i], value.BUTTON_SIZE, value.COLORS['dis_blue'], value.COLORS['white'], display, (x, y))
         btn.draw()
         value.BUTTONS.append(btn)
 
