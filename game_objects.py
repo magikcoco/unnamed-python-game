@@ -214,7 +214,7 @@ class Isotile:
         self.base_w = 20 * scale  # base width of a tile
         self.base_h = 24 * scale  # base height of a tile
         self.display = display
-        self.surface = pygame.transform.scale(tile_sprite, (self.base_w, self.base_h))
+        self.surface = pygame.transform.scale(tile_sprite[0], (self.base_w, self.base_h))
         self.scale = scale  # scale of this tile
         self.point = point
 
@@ -237,23 +237,25 @@ class Isomap:
         self.tiles = dict()
         self.iso_x = 10 * self.scale
         self.iso_y = 5 * self.scale
-        self.iso_z = 13 * self.scale
+        self.iso_z = 14 * self.scale
 
-    def scale_map(self, scalar):
+    def scale_map(self, scalar):  # TODO: find a way to do this that doesnt have a big impact on calculation time
         self.scale = scalar
 
     def reset_values(self):
         self.tiles = dict()
         self.iso_x = 10 * self.scale
         self.iso_y = 5 * self.scale
-        self.iso_z = 13 * self.scale
+        self.iso_z = 14 * self.scale
 
-    def convert_coordinates(self, x, y, z=False):
+    def convert_coordinates(self, x, y):
         conv_x = self.offset_x + x * self.iso_x - y * self.iso_x
         conv_y = self.offset_y + x * self.iso_y + y * self.iso_y
-        if z:
-            conv_y -= self.iso_z
         return conv_x, conv_y
+
+    def z_shift(self, point, level):
+        z_shift_y = point[1] - (self.iso_z * level)
+        return point[0], z_shift_y
 
     def turn_clockwise(self):
         self.mapdata = list(zip(*self.mapdata[::-1]))  # clockwise
@@ -266,10 +268,10 @@ class Isomap:
         for y, row in enumerate(self.mapdata):  # data y axis
             for x, tile in enumerate(row):  # data x axis
                 iso_pnt = self.convert_coordinates(x, y)
-                self.tiles[iso_pnt] = Isotile(value.SPRITES['default tile'], self.scale, self.display, iso_pnt)
-                if tile == 1:
-                    iso_pnt = self.convert_coordinates(x, y, True)  # if one, z shift for wall tile
-                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default tile'], self.scale, self.display, iso_pnt)
+                self.tiles[iso_pnt] = Isotile(value.SPRITES['default'], self.scale, self.display, iso_pnt)
+                if tile:
+                    iso_pnt = self.z_shift(iso_pnt, tile)
+                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default'], self.scale, self.display, iso_pnt)
 
     def draw(self):
         for tile in self.tiles.values():

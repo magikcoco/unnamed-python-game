@@ -16,16 +16,18 @@ def load_sounds():
 
 
 def load_sprites():
-    # load sprites used in the game
-    #tile_w = 20 * value.TILE_SIZE_MULT  # base tile size times tile size multiplier, width
-    #tile_h = 24 * value.TILE_SIZE_MULT  # tile height
-
-    default_tile = pygame.image.load(os.path.join('assets', 'sprites', 'default.png'))  # default tile sprite
-    #default_tile = pygame.transform.scale(default_tile, (tile_w, tile_h))  # scale the tile
-    default_tile.set_colorkey(value.BLACK)  # needed for transparent background on sprite
-
-    # put them in a data structure
-    value.SPRITES['default tile'] = default_tile
+    # load tiles
+    dir_path = os.path.join('assets', 'sprites', 'tiles')
+    for item in os.listdir(dir_path):
+        item_path = os.path.join(dir_path, item)
+        if os.path.isdir(item_path):
+            files = os.listdir(item_path)
+            anim_seq = list()
+            for file in files:
+                frame = pygame.image.load(os.path.join(item_path, file))
+                frame.set_colorkey(value.BLACK)
+                anim_seq.append(frame)
+            value.SPRITES[item] = anim_seq
 
 
 def load_map(game_map):

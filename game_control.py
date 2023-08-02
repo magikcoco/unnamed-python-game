@@ -54,8 +54,6 @@ def handle_iso_movement(keys, last_frame_keys):
 
         # rotation keys, should not be continuous
         if keys[pygame.K_LCTRL] and not last_frame_keys[pygame.K_LCTRL]:
-            #value.MAP_DATA = list(zip(*value.MAP_DATA))[::-1]  # counterclockwise
             value.CUR_ISO_MAP.turn_counterclockwise()
         if keys[pygame.K_RCTRL] and not last_frame_keys[pygame.K_RCTRL]:
-            #value.MAP_DATA = list(zip(*value.MAP_DATA[::-1]))  # clockwise
             value.CUR_ISO_MAP.turn_clockwise()
