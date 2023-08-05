@@ -3,7 +3,6 @@
 
 import pygame, os
 from pygame.locals import *
-import game_values as value
 
 # TODO: add movable character to map
 # TODO: add vision to character
@@ -16,6 +15,39 @@ import game_values as value
 pygame.init()  # initialize pygame
 pygame.mixer.init()  # mixer for sounds
 
+# VARIABLES
+fck_scope = {  # all the variables defined in a dictionary as key: variable name -> value: variable value
+    'button size default': (160, 65),  # the default size of a button
+    'buttons': [],  # a 1D list of all buttons currently active
+    'colors': {  # dictionary of preset colors
+        'black': (0, 0, 0),  # basic black
+        'white': (255, 255, 255),  # basic white
+        'dis_blue': (0, 134, 223)  # blue used for displays
+    },
+    'current map': None,  # the current map loaded in the game
+    'current map data': [],  # a 2D list of the current map data
+    'debug mode': False,  # flag for whether to display debug information
+    'default font': None,  # the default font to use for text in the game
+    'iso map loaded': False,  # flag for loading isometric map
+    'main menu drawn': False,  # flag for drawing main menu
+    'pause menu drawn': False,  # flag for drawing pause menu
+    'sounds': {},  # a dictionary of sounds used for the game, simple name -> sound file
+    'sprites': {  # a dictionary of sprites used for the game
+        'default': []  # sprites store frames individually in a list
+    },
+    'states': {  # dictionary of current game states, controls the game, only one should be true at a time
+        'main menu': True,  # start at the main menu
+        'downtime': False,
+        'meetup': False,
+        'legwork': False,
+        'mission': False,
+        'getaway': False,
+        'pause menu': False
+    },
+    'tile anim len': 0,  # the number of frames in a tile animation
+    'tile hl len': 0  # the number of frames in a tile highlight animation
+}
+
 
 # DEFINE FUNCTIONS
 # loads all sounds into a dictionary
@@ -24,7 +56,7 @@ def load_sounds():
     btn_hover = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'button-hover.ogg'))  # button hover sound
 
     # data structure for sounds
-    value.SOUNDS['button hover'] = btn_hover
+    fck_scope['sounds']['button hover'] = btn_hover
 
 
 # loads all sprites into a dictionary
@@ -39,13 +71,13 @@ def load_sprites():
             anim_seq = list()
             for file in files:
                 frame = pygame.image.load(os.path.join(item_path, file))
-                frame.set_colorkey(value.COLORS['black'])
+                frame.set_colorkey(fck_scope['colors']['black'])
                 anim_seq.append(frame)
-            value.SPRITES[item] = anim_seq
+            fck_scope['sprites'][item] = anim_seq
             if str(item) == 'highlight':
-                value.TILE_HL_ANIM_LEN = len(anim_seq) - 1
+                fck_scope['tile hl len'] = len(anim_seq) - 1
             elif not length_assigned:
-                value.TILE_ANIM_LEN = len(anim_seq) - 1
+                fck_scope['tile anim len'] = len(anim_seq) - 1
                 length_assigned = True
 
 
@@ -55,64 +87,64 @@ def load_map(game_map):
     # TODO: check for and handle errors in accessing this file
     f = open(os.path.join('assets', 'maps', game_map))  # open the map file
     # read each row into a list of substrings, for each substring convert into a list of ints for each character
-    value.MAP_DATA = [[int(c) for c in row] for row in f.read().split('\n')]  # 2D list
+    fck_scope['current map data'] = [[int(c) for c in row] for row in f.read().split('\n')]  # 2D list
     f.close()  # close the file
 
 
 def draw_pause_menu(display):
     top_pad = 30
     buttons = ['MAIN MENU', 'TEST']
-    x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2
-    btn_y = value.BUTTON_SIZE[1] + 20
+    x = display.get_width() // 2 - fck_scope['button size default'][0] // 2
+    btn_y = fck_scope['button size default'][1] + 20
     for i in range(len(buttons)):
         y = top_pad + btn_y * i
-        btn = Button(buttons[i], value.BUTTON_SIZE, value.COLORS['dis_blue'], value.COLORS['white'], display, (x, y))
+        btn = Button(buttons[i], fck_scope['button size default'], fck_scope['colors']['dis_blue'], fck_scope['colors']['white'], display, (x, y))
         btn.draw()
-        value.BUTTONS.append(btn)
+        fck_scope['buttons'].append(btn)
 
     # set flags
-    value.PAUSE_MENU_DRAWN = True
+    fck_scope['pause menu drawn'] = True
 
 
 def draw_main_menu(display):
     top_pad = 50  # the pad from the top of the display, for its border
     buttons = ['PLAY', 'TEST']  # the buttons to put on this menu
-    x = display.get_width() // 2 - value.BUTTON_SIZE[0] // 2  # the x coordinate of these buttons
-    btn_y = value.BUTTON_SIZE[1] + 20  # the amount of space between buttons
+    x = display.get_width() // 2 - fck_scope['button size default'][0] // 2  # the x coordinate of these buttons
+    btn_y = fck_scope['button size default'][1] + 20  # the amount of space between buttons
     for i in range(len(buttons)):  # draw the buttons
         y = top_pad + btn_y * i  # incrementing the y
-        btn = Button(buttons[i], value.BUTTON_SIZE, value.COLORS['dis_blue'], value.COLORS['white'], display, (x, y))
+        btn = Button(buttons[i], fck_scope['button size default'], fck_scope['colors']['dis_blue'], fck_scope['colors']['white'], display, (x, y))
         btn.draw()
-        value.BUTTONS.append(btn)  # add the button to the proper data structure
+        fck_scope['buttons'].append(btn)  # add the button to the proper data structure
 
     # set flags
-    value.MAIN_MENU_DRAWN = True
+    fck_scope['main menu drawn'] = True
 
 
 def check_button_collisions():
-    for button in value.BUTTONS:
+    for button in fck_scope['buttons']:
         if button.check_mouse():  # what each button does
             if button.name == 'PLAY':  # main menu play button, starts the game without loading any save
-                value.CONTEXT_MAIN_MENU = False  # not on the main menu anymore
-                value.CONTEXT_MISSION = True  # TODO: change the flag when new contexts are made
-                value.MAIN_MENU_DRAWN = False  # main menu not drawn anymore
-                value.BUTTONS.clear()  # clear the main menu buttons out
+                fck_scope['states']['main menu'] = False  # not on the main menu anymore
+                fck_scope['states']['mission'] = True  # TODO: change the flag when new contexts are made
+                fck_scope['main menu drawn'] = False  # main menu not drawn anymore
+                fck_scope['buttons'].clear()  # clear the main menu buttons out
             elif button.name == 'MAIN MENU':  # pause menu main menu button, quits to main menu
-                value.CONTEXT_MAIN_MENU = True
-                value.CONTEXT_DOWNTIME = False
-                value.CONTEXT_MEET = False
-                value.CONTEXT_LEGWORK = False
-                value.CONTEXT_MISSION = False
-                value.CONTEXT_ESCAPE = False
-                value.GAME_PAUSE = False
-                value.PAUSE_MENU_DRAWN = False
-                value.BUTTONS.clear()
+                fck_scope['states']['main menu'] = True
+                fck_scope['states']['downtime'] = False
+                fck_scope['states']['meetup'] = False
+                fck_scope['states']['legwork'] = False
+                fck_scope['states']['mission'] = False
+                fck_scope['states']['getaway'] = False
+                fck_scope['states']['pause menu'] = False
+                fck_scope['pause menu drawn'] = False
+                fck_scope['buttons'].clear()
 
 
 def handle_iso_zoom(m_wheel):
-    scalar = value.CUR_ISO_MAP.scale + m_wheel
+    scalar = fck_scope['current map'].scale + m_wheel
     if (scalar <= 9) and (scalar > 1):
-        value.CUR_ISO_MAP.scale_map(scalar)
+        fck_scope['current map'].scale_map(scalar)
 
 
 def handle_iso_movement(keys, last_frame_keys):
@@ -120,27 +152,27 @@ def handle_iso_movement(keys, last_frame_keys):
 
     # pause game, should not be continuous
     if keys[pygame.K_ESCAPE] and not last_frame_keys[pygame.K_ESCAPE]:
-        value.GAME_PAUSE = not value.GAME_PAUSE
-        if not value.GAME_PAUSE:
-            value.BUTTONS.clear()
-            value.PAUSE_MENU_DRAWN = False
+        fck_scope['states']['pause menu'] = not fck_scope['states']['pause menu']
+        if not fck_scope['states']['pause menu']:
+            fck_scope['buttons'].clear()
+            fck_scope['pause menu drawn'] = False
 
-    if not value.GAME_PAUSE:
+    if not fck_scope['states']['pause menu']:
         # lateral movement keys, should be continuous
         if keys[pygame.K_UP]:  # map up
-            value.CUR_ISO_MAP.offset_y -= map_vel
+            fck_scope['current map'].offset_y -= map_vel
         if keys[pygame.K_DOWN]:  # map down
-            value.CUR_ISO_MAP.offset_y += map_vel
+            fck_scope['current map'].offset_y += map_vel
         if keys[pygame.K_LEFT]:  # map left
-            value.CUR_ISO_MAP.offset_x -= map_vel
+            fck_scope['current map'].offset_x -= map_vel
         if keys[pygame.K_RIGHT]:  # map right
-            value.CUR_ISO_MAP.offset_x += map_vel
+            fck_scope['current map'].offset_x += map_vel
 
         # rotation keys, should not be continuous
         if keys[pygame.K_LCTRL] and not last_frame_keys[pygame.K_LCTRL]:
-            value.CUR_ISO_MAP.turn_counterclockwise()
+            fck_scope['current map'].turn_counterclockwise()
         if keys[pygame.K_RCTRL] and not last_frame_keys[pygame.K_RCTRL]:
-            value.CUR_ISO_MAP.turn_clockwise()
+            fck_scope['current map'].turn_clockwise()
 
 
 # DEFINE OBJECTS
@@ -177,8 +209,8 @@ class Display:  # a display for components on the screen
         pygame.draw.rect(self.my_surface, self.border_color, self.border_left)
         pygame.draw.rect(self.my_surface, self.border_color, self.border_top)
         if not self.name == '':  # render a name if its not blank
-            title = value.GAME_FONT.render(self.name, 1, self.text_color)
-            text_width, text_height = value.GAME_FONT.size(self.name)
+            title = fck_scope['default font'].render(self.name, 1, self.text_color)
+            text_width, text_height = fck_scope['default font'].size(self.name)
             self.my_surface.blit(title, (self.border_top.centerx - text_width // 2, 0))
         self.main_surface.blit(self.my_surface, self.location)  # blit the display onto the main surface
 
@@ -231,7 +263,7 @@ class Button:  # button for pressing and making things happen
         self.bot_go = True  # on the bottom
         self.left_go = False  # on the left
         self.right_go = False  # or on the right
-        self.hover_sound = value.SOUNDS['button hover']  # the sound this button makes when hovered over
+        self.hover_sound = fck_scope['sounds']['button hover']  # the sound this button makes when hovered over
 
     def draw(self):
         # draws this button onto it's display
@@ -239,7 +271,7 @@ class Button:  # button for pressing and making things happen
         s.fill(self.display.get_fill())  # wipe away last frame
         x = self.rect.size[0]  # the maximum x value
         y = self.rect.size[1]  # the maximum y value
-        off_x, off_y = value.GAME_FONT.size(self.name)  # the offsets for the text in the button
+        off_x, off_y = fck_scope['default font'].size(self.name)  # the offsets for the text in the button
         hl_vel = 10  # how fast the line moves
         t = 2  # line thickness
         l = 40  # length of animated line on highlight
@@ -249,7 +281,7 @@ class Button:  # button for pressing and making things happen
             pygame.draw.line(s, c, (0, 0), (0, y), t)  # left
             pygame.draw.line(s, c, (0, y - t), (x, y - t), t)  # bot
             pygame.draw.line(s, c, (0, 0), (x, 0), t)  # top
-            btn_text = value.GAME_FONT.render(self.name, 1, self.color)  # render the button text
+            btn_text = fck_scope['default font'].render(self.name, 1, self.color)  # render the button text
         else:  # if the button is currently highlighted
             c = self.color_hl  # abbr. for self.color
             # animate the border, two lines running along the border of the button
@@ -297,7 +329,7 @@ class Button:  # button for pressing and making things happen
                     self.to = 0  # reset offset
                     self.top_go = False
                 self.to += hl_vel  # increment offset to go from right to left
-            btn_text = value.GAME_FONT.render(self.name, 1, c)  # render the button text
+            btn_text = fck_scope['default font'].render(self.name, 1, c)  # render the button text
         self.display.draw(self.my_surface, self.rect.topleft)  # draw this button on the display
         self.display.draw(btn_text, (self.rect.centerx - off_x // 2, self.rect.centery - off_y // 2))  # draw the text
 
@@ -359,7 +391,7 @@ class Isotile:
         self.scale = scale
         self.display = display
         self.point = point
-        highlight = pygame.transform.scale(value.SPRITES['highlight'][0], (20 * self.scale, 11 * self.scale))
+        highlight = pygame.transform.scale(fck_scope['sprites']['highlight'][0], (20 * self.scale, 11 * self.scale))
         self.hl_rect = highlight.get_rect(topleft=point)
         self.can_hl = can_highlight
         self.made_sound = False
@@ -398,7 +430,7 @@ class Isotile:
     def draw_hl(self):
         if self.can_hl:
             if self.detect_mouse_hover():
-                highlight = pygame.transform.scale(value.SPRITES['highlight'][Isotile.hl_frame], (20 * self.scale, 11 * self.scale))
+                highlight = pygame.transform.scale(fck_scope['sprites']['highlight'][Isotile.hl_frame], (20 * self.scale, 11 * self.scale))
                 self.display.draw(highlight, self.point)
                 return True
         return False
@@ -442,12 +474,12 @@ class Isomap:
             for x, tile in enumerate(row):  # data x axis
                 if tile:
                     iso_pnt = self.convert_coordinates(x, y)
-                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default'], self.scale, self.display, iso_pnt, can_highlight=False)
+                    self.tiles[iso_pnt] = Isotile(fck_scope['sprites']['default'], self.scale, self.display, iso_pnt, can_highlight=False)
                     iso_pnt = self.z_shift(iso_pnt, tile)
-                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default'], self.scale, self.display, iso_pnt, can_highlight=False)
+                    self.tiles[iso_pnt] = Isotile(fck_scope['sprites']['default'], self.scale, self.display, iso_pnt, can_highlight=False)
                 else:
                     iso_pnt = self.convert_coordinates(x, y)
-                    self.tiles[iso_pnt] = Isotile(value.SPRITES['default'], self.scale, self.display, iso_pnt)
+                    self.tiles[iso_pnt] = Isotile(fck_scope['sprites']['default'], self.scale, self.display, iso_pnt)
 
     def scale_map(self, scalar):  # TODO: find a way to do this that doesnt have a big impact on calculation time
         self.scale = scalar
@@ -470,11 +502,11 @@ class Isomap:
                 break
 
         # move through frames of animation, we call this method every frame
-        if Isotile.frame < value.TILE_ANIM_LEN:
+        if Isotile.frame < fck_scope['tile anim len']:
             Isotile.frame += 1
         else:
             Isotile.frame = 0
-        if Isotile.hl_frame < value.TILE_HL_ANIM_LEN:
+        if Isotile.hl_frame < fck_scope['tile hl len']:
             Isotile.hl_frame += 1
         else:
             Isotile.hl_frame = 0
@@ -500,15 +532,15 @@ def main():
     # main menu
     main_menu_size = (DIS_W // 5, DIS_H - 20)  # size
     main_menu_loc = (10, 10)  # location on main_surface
-    main_menu_display = Display('Main Menu', main_menu_size, main_menu_loc, value.COLORS['dis_blue'], value.COLORS['black'], value.COLORS['black'], main_surface)
+    main_menu_display = Display('Main Menu', main_menu_size, main_menu_loc, fck_scope['colors']['dis_blue'], fck_scope['colors']['black'], fck_scope['colors']['black'], main_surface)
     # pause menu
     pause_menu_size = (DIS_W // 5 * 2, DIS_H // 3 * 2)  # size
     pause_menu_loc = (DIS_W // 2 - pause_menu_size[0] // 2, DIS_H // 2 - pause_menu_size[1] // 2)  # location
-    pause_menu_display = Display('', pause_menu_size, pause_menu_loc, value.COLORS['dis_blue'], value.COLORS['black'], value.COLORS['black'], main_surface)
+    pause_menu_display = Display('', pause_menu_size, pause_menu_loc, fck_scope['colors']['dis_blue'], fck_scope['colors']['black'], fck_scope['colors']['black'], main_surface)
     # mission map
     map_iso_size = (DIS_W // 5 * 3, DIS_H - 20)  # size
     map_iso_loc = (DIS_W // 2 - map_iso_size[0] // 2, 10)  # location
-    mission_display = Display('Mission', map_iso_size, map_iso_loc, value.COLORS['dis_blue'], value.COLORS['black'], value.COLORS['black'], main_surface)
+    mission_display = Display('Mission', map_iso_size, map_iso_loc, fck_scope['colors']['dis_blue'], fck_scope['colors']['black'], fck_scope['colors']['black'], main_surface)
 
     # metrics and controls
     dt = 0  # delta time is milliseconds since last frame
@@ -519,7 +551,7 @@ def main():
     game_running = True  # for the main game loop
 
     # load initial values
-    value.GAME_FONT = pygame.font.Font(os.path.join('assets', 'fonts', 'AtlantisInternational-jen0.ttf'), 30)
+    fck_scope['default font'] = pygame.font.Font(os.path.join('assets', 'fonts', 'AtlantisInternational-jen0.ttf'), 30)
     last_frame_keys = pygame.key.get_pressed()
     load_sprites()
     load_sounds()
@@ -534,23 +566,23 @@ def main():
                 game_running = False  # ends main game loop
             if event.type == pygame.KEYUP:
                 if event.key == K_F1:
-                    value.DEBUG_MODE = not value.DEBUG_MODE  # toggle debug mode
+                    fck_scope['debug mode'] = not fck_scope['debug mode']  # toggle debug mode
             if event.type == pygame.MOUSEWHEEL:
                 m_wheel = event.y
 
         # CONTROLS
         # keyboard input
         keys = pygame.key.get_pressed()  # the state of all keys in an array
-        if value.CONTEXT_MISSION:
+        if fck_scope['states']['mission']:
             handle_iso_movement(keys, last_frame_keys)
         last_frame_keys = keys  # keep these keys to track changes in next frame
 
         # mouse input
-        if value.CONTEXT_MAIN_MENU:
+        if fck_scope['states']['main menu']:
             check_button_collisions()
-        elif value.GAME_PAUSE:
+        elif fck_scope['states']['pause menu']:
             check_button_collisions()
-        elif value.CONTEXT_MISSION:
+        elif fck_scope['states']['mission']:
             handle_iso_zoom(m_wheel)
 
         # GAME LOGIC
@@ -558,37 +590,37 @@ def main():
 
         # RENDER GAME
         # fill screen to wipe away last frame
-        main_surface.fill(value.COLORS['black'])  # fills screen with solid black
+        main_surface.fill(fck_scope['colors']['black'])  # fills screen with solid black
 
         # state-dependent
         # main menu
-        if value.CONTEXT_MAIN_MENU:
-            if not value.MAIN_MENU_DRAWN:
+        if fck_scope['states']['main menu']:
+            if not fck_scope['main menu drawn']:
                 draw_main_menu(main_menu_display)
-            for button in value.BUTTONS:
+            for button in fck_scope['buttons']:
                 button.draw()
             main_menu_display.render()
         # game pause
-        elif value.GAME_PAUSE:  # pause menu should draw instead of anything else
-            if not value.PAUSE_MENU_DRAWN:
+        elif fck_scope['states']['pause menu']:  # pause menu should draw instead of anything else
+            if not fck_scope['pause menu drawn']:
                 draw_pause_menu(pause_menu_display)
-            for button in value.BUTTONS:
+            for button in fck_scope['buttons']:
                 button.draw()
             pause_menu_display.render()
-        elif value.CONTEXT_MISSION:
-            if not value.ISO_MAP_LOADED:
+        elif fck_scope['states']['mission']:
+            if not fck_scope['iso map loaded']:
                 load_map('default.txt')
-                value.CUR_ISO_MAP = Isomap(value.MAP_DATA, mission_display)
-                value.ISO_MAP_LOADED = True  # switch flag
-            if value.ISO_MAP_LOADED:
-                value.CUR_ISO_MAP.draw()
+                fck_scope['current map'] = Isomap(fck_scope['current map data'], mission_display)
+                fck_scope['iso map loaded'] = True  # switch flag
+            if fck_scope['iso map loaded']:
+                fck_scope['current map'].draw()
             mission_display.render()
 
         # debug_mode overlay
-        if value.DEBUG_MODE:  # debug stuff draws on top of anything else being rendered
-            dt_text = value.GAME_FONT.render('dt=' + str(dt) + 'ms', 1, value.COLORS['white'])  # setup delta time text
-            rt_text = value.GAME_FONT.render('rt=' + str(rt) + 'ms', 1, value.COLORS['white'])  # setup raw time text
-            mouse_text = value.GAME_FONT.render('mp=' + str(pygame.mouse.get_pos()), 1, value.COLORS['white'])  # mouse position
+        if fck_scope['debug mode']:  # debug stuff draws on top of anything else being rendered
+            dt_text = fck_scope['default font'].render('dt=' + str(dt) + 'ms', 1, fck_scope['colors']['white'])  # setup delta time text
+            rt_text = fck_scope['default font'].render('rt=' + str(rt) + 'ms', 1, fck_scope['colors']['white'])  # setup raw time text
+            mouse_text = fck_scope['default font'].render('mp=' + str(pygame.mouse.get_pos()), 1, fck_scope['colors']['white'])  # mouse position
             main_surface.blit(dt_text, (0, 0))  # add delta time tracker to upper left
             main_surface.blit(rt_text, (0, 25))  # add delta time tracker to upper left
             main_surface.blit(mouse_text, (0, 25 * 2))  # add mouse text
