@@ -4,11 +4,18 @@
 import pygame, os
 from pygame.locals import *
 
+## Vague list of tasks to accomplish  ##
+# TODO: simplify existing code
+# TODO: switch to using image manipulation to build each frame in memory, cut down calls to GPU as much as possible
+# TODO: logs, ability to save and export game state to file, ability to load game state from a file
+# TODO: multithreading, thread for game logic, thread for rendering, thread for outputting (logs, saves, etc)
+# TODO: settings menu with ability to change to fullscreen, support changing resolution
+# TODO: add downtime, meetup, legwork, getaway states to the game properly
+# TODO: make additional tile types
+# TODO: increase complexity of map file
+# TODO: update default map to use new tile types
 # TODO: add movable character to map
 # TODO: add vision to character
-# TODO: Update default map
-# TODO: make some actual tiles
-# TODO: decide what numbers that aren't 0 or 1 mean in a map file
 # TODO: change sprites out of vision to greyscale
 
 # SETUP PYGAME
@@ -31,7 +38,9 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
     'iso map loaded': False,  # flag for loading isometric map
     'main menu drawn': False,  # flag for drawing main menu
     'pause menu drawn': False,  # flag for drawing pause menu
-    'sounds': {},  # a dictionary of sounds used for the game, simple name -> sound file
+    'sounds': {  # a dictionary of sounds used for the game, simple name -> sound file
+        'default': None  # string key -> sound loaded from pygame
+    },
     'sprites': {  # a dictionary of sprites used for the game
         'default': []  # sprites store frames individually in a list
     },
@@ -60,25 +69,25 @@ def load_sounds():
 
 
 # loads all sprites into a dictionary
-def load_sprites():
-    length_assigned = False
+def load_sprites():  # TODO: one for loop to rule them all, unified load assets function
+    length_assigned = False  # flag so we don't keep assigning length over and over
     # load tiles
-    dir_path = os.path.join('assets', 'sprites', 'tiles')
-    for item in os.listdir(dir_path):
-        item_path = os.path.join(dir_path, item)
-        if os.path.isdir(item_path):
-            files = os.listdir(item_path)
-            anim_seq = list()
-            for file in files:
-                frame = pygame.image.load(os.path.join(item_path, file))
-                frame.set_colorkey(fck_scope['colors']['black'])
-                anim_seq.append(frame)
-            fck_scope['sprites'][item] = anim_seq
-            if str(item) == 'highlight':
-                fck_scope['tile hl len'] = len(anim_seq) - 1
-            elif not length_assigned:
-                fck_scope['tile anim len'] = len(anim_seq) - 1
-                length_assigned = True
+    dir_path = os.path.join('assets', 'sprites', 'tiles')  # path of directory
+    for item in os.listdir(dir_path):  # iterate over all items
+        item_path = os.path.join(dir_path, item)  # path of *this* item
+        if os.path.isdir(item_path):  # ignore unless it's a subdirectory
+            files = os.listdir(item_path)  # list of all files in that subdirectory
+            anim_seq = list()  # list of all frames
+            for file in files:  # load each file in that directory as a frame
+                frame = pygame.image.load(os.path.join(item_path, file))  # TODO: check file type first
+                frame.set_colorkey(fck_scope['colors']['black'])  # set color key for invisible background
+                anim_seq.append(frame)  # pygame Surface goes into the animation sequence list
+            fck_scope['sprites'][item] = anim_seq  # save as subdirectory name: list(frames)
+            if str(item) == 'highlight':  # tile highlight (appears on mouse hover)
+                fck_scope['tile hl len'] = len(anim_seq) - 1  # save length of this animation
+            elif not length_assigned:  # otherwise assign normal tile animation
+                fck_scope['tile anim len'] = len(anim_seq) - 1  # save length
+                length_assigned = True  # switch flag
 
 
 # loads a given map into a 2d array
@@ -91,21 +100,24 @@ def load_map(game_map):
     f.close()  # close the file
 
 
+# TODO: condense into a single "draw_menu" function?
+# draws the pause menu on the screen
 def draw_pause_menu(display):
-    top_pad = 30
-    buttons = ['MAIN MENU', 'TEST']
-    x = display.get_width() // 2 - fck_scope['button size default'][0] // 2
-    btn_y = fck_scope['button size default'][1] + 20
-    for i in range(len(buttons)):
-        y = top_pad + btn_y * i
+    top_pad = 30  # padding from the top
+    buttons = ['MAIN MENU', 'TEST']  # list out buttons to draw
+    x = display.get_width() // 2 - fck_scope['button size default'][0] // 2  # center the button
+    btn_y = fck_scope['button size default'][1] + 20  # get the y position
+    for i in range(len(buttons)):  # draw every button in the list
+        y = top_pad + btn_y * i  # increment the y position to space buttons evenly
         btn = Button(buttons[i], fck_scope['button size default'], fck_scope['colors']['dis_blue'], fck_scope['colors']['white'], display, (x, y))
-        btn.draw()
-        fck_scope['buttons'].append(btn)
+        btn.draw()  # have the button draw itself
+        fck_scope['buttons'].append(btn)  # add the button to the list of active buttons
 
     # set flags
     fck_scope['pause menu drawn'] = True
 
 
+# draws the main menu on the screen
 def draw_main_menu(display):
     top_pad = 50  # the pad from the top of the display, for its border
     buttons = ['PLAY', 'TEST']  # the buttons to put on this menu
@@ -121,8 +133,12 @@ def draw_main_menu(display):
     fck_scope['main menu drawn'] = True
 
 
+# checks if any active buttons have been clicked and performs an action if they have been
 def check_button_collisions():
-    for button in fck_scope['buttons']:
+    # button actions
+    # TODO: state dependent button names
+    # TODO: function for changing state?
+    for button in fck_scope['buttons']:  # TODO: functions for each button
         if button.check_mouse():  # what each button does
             if button.name == 'PLAY':  # main menu play button, starts the game without loading any save
                 fck_scope['states']['main menu'] = False  # not on the main menu anymore
@@ -141,23 +157,26 @@ def check_button_collisions():
                 fck_scope['buttons'].clear()
 
 
-def handle_iso_zoom(m_wheel):
-    scalar = fck_scope['current map'].scale + m_wheel
-    if (scalar <= 9) and (scalar > 1):
+# scale the isometric map in mission context within certain bounds
+def handle_iso_zoom(m_wheel):  # m_wheel is the value given by pygame, negative or positive, based on direction/speed
+    # TODO: smooth scrolling
+    scalar = fck_scope['current map'].scale + m_wheel   # get the current scale of the map and add m_wheel
+    if (scalar <= 9) and (scalar > 1):  # if the result is within correct bounds then change the scale
         fck_scope['current map'].scale_map(scalar)
 
 
+# move the isometric map
 def handle_iso_movement(keys, last_frame_keys):
     map_vel = 10  # speed at which the map moves
 
     # pause game, should not be continuous
     if keys[pygame.K_ESCAPE] and not last_frame_keys[pygame.K_ESCAPE]:
-        fck_scope['states']['pause menu'] = not fck_scope['states']['pause menu']
-        if not fck_scope['states']['pause menu']:
-            fck_scope['buttons'].clear()
-            fck_scope['pause menu drawn'] = False
+        fck_scope['states']['pause menu'] = not fck_scope['states']['pause menu']  # (un)pause the game (context change method?)
+        if not fck_scope['states']['pause menu']:  # if we just unpaused the game
+            fck_scope['buttons'].clear()  # clear buttons
+            fck_scope['pause menu drawn'] = False  # switch flag
 
-    if not fck_scope['states']['pause menu']:
+    if not fck_scope['states']['pause menu']:  # dont allow in pause context
         # lateral movement keys, should be continuous
         if keys[pygame.K_UP]:  # map up
             fck_scope['current map'].offset_y -= map_vel
@@ -170,14 +189,14 @@ def handle_iso_movement(keys, last_frame_keys):
 
         # rotation keys, should not be continuous
         if keys[pygame.K_LCTRL] and not last_frame_keys[pygame.K_LCTRL]:
-            fck_scope['current map'].turn_counterclockwise()
+            fck_scope['current map'].turn_counterclockwise()  # TODO: Object or function job here?
         if keys[pygame.K_RCTRL] and not last_frame_keys[pygame.K_RCTRL]:
             fck_scope['current map'].turn_clockwise()
 
 
 # DEFINE OBJECTS
 class Display:  # a display for components on the screen
-    def __init__(self, name, s_size, location, border_color, fill_color, text_color, main_surface):
+    def __init__(self, name, s_size, location, border_color, fill_color, text_color, main_surface):  # TODO: fix shadow
         # passed values
         self.name = name.strip()  # the name of this display
         self.my_surface = pygame.Surface(s_size)  # the surface within the display
@@ -380,28 +399,30 @@ class Button:  # button for pressing and making things happen
 
 
 class Isotile:
-    frame = 0
-    hl_frame = 0
+    # if this isn't static then every time the map changes the tiles the animation will reset
+    # all tiles should be kept in sync
+    frame = 0  # animation frame (all tiles are in sync)
+    hl_frame = 0  # highlight frame (in sync across all tiles)
 
     def __init__(self, tile_sprite, scale, display, point, can_highlight=True):
-        for i in range(len(tile_sprite)):
+        for i in range(len(tile_sprite)):  # scale all frames
             tile_sprite[i-1] = pygame.transform.scale(tile_sprite[i-1], (20 * scale, 24 * scale))
-        self.surface = tile_sprite[Isotile.frame]
-        self.anim_seq = tile_sprite
-        self.scale = scale
-        self.display = display
-        self.point = point
+        self.surface = tile_sprite[Isotile.frame]  # get the current surface
+        self.anim_seq = tile_sprite  # get the full animation sequence
+        self.scale = scale  # get the current scale
+        self.display = display  # get the display to draw on
+        self.point = point  # get the location of this tile (topleft)
         highlight = pygame.transform.scale(fck_scope['sprites']['highlight'][0], (20 * self.scale, 11 * self.scale))
-        self.hl_rect = highlight.get_rect(topleft=point)
-        self.can_hl = can_highlight
-        self.made_sound = False
+        self.hl_rect = highlight.get_rect(topleft=point)  # where to draw the highlight on this tile
+        self.can_hl = can_highlight  # if this tile is highlightable
 
     def detect_mouse_hover(self):
+        # find out if the mouse is hovering on a tile with raycasting
         hover = False
         # mouse location
         mx, my = self.display.get_relative_mouse_pos()
         # listed clockwise from left corner, vertices of collision area
-        vertices = [
+        vertices = [  # TODO: expand to outer edge and deal with overlap in code
             (self.point[0] + (0 * self.scale), self.point[1] + (5 * self.scale)),  # left corner
             (self.point[0] + (8 * self.scale), self.point[1] + (0 * self.scale)),  # top corners
             (self.point[0] + (11 * self.scale), self.point[1] + (0 * self.scale)),
@@ -424,10 +445,12 @@ class Isotile:
         return hover
 
     def draw(self):
+        # draw self on the display for this tile
         pygame.draw.rect(self.surface, (255, 0, 0), self.hl_rect)
         self.display.draw(self.surface, self.point)
 
     def draw_hl(self):
+        # draw highlight on the display
         if self.can_hl:
             if self.detect_mouse_hover():
                 highlight = pygame.transform.scale(fck_scope['sprites']['highlight'][Isotile.hl_frame], (20 * self.scale, 11 * self.scale))
@@ -439,36 +462,40 @@ class Isotile:
 class Isomap:
     def __init__(self, mapdata, display):
         #passed
-        self.mapdata = mapdata
-        self.display = display
+        self.mapdata = mapdata  # map data to render
+        self.display = display  # display to draw on
 
         # changes
-        self.scale = 2
-        self.offset_x = self.display.get_width() // 2
+        self.scale = 2  # scale of this map
+        self.offset_x = self.display.get_width() // 2  # offset (default to middle)
         self.offset_y = self.display.get_height() // 2
 
         #default, declare the first time
-        self.tiles = dict()
-        self.iso_x = 10 * self.scale
+        self.tiles = dict()  # all tiles in this map
+        # TODO: remove scale from this calculation, make static
+        self.iso_x = 10 * self.scale  # isometric offsets for projecting into isometric view
         self.iso_y = 5 * self.scale
         self.iso_z = 14 * self.scale
 
-    def convert_coordinates(self, x, y):
+    def convert_coordinates(self, x, y):  # TODO: make static, remove offset from equation
+        # convert given 2d coordinates to isometric
         conv_x = self.offset_x + x * self.iso_x - y * self.iso_x
         conv_y = self.offset_y + x * self.iso_y + y * self.iso_y
         return conv_x, conv_y
 
-    def z_shift(self, point, level):
+    def z_shift(self, point, level):  # TODO: merge with convert_coordinates and commit to 3D isometric
         z_shift_y = point[1] - (self.iso_z * level)
         return point[0], z_shift_y
 
     def reset_values(self):
+        # reset values
         self.tiles = dict()
         self.iso_x = 10 * self.scale
         self.iso_y = 5 * self.scale
         self.iso_z = 14 * self.scale
 
-    def update_tiles(self):  # TODO: tiles other than default
+    def update_tiles(self):
+        # TODO: tiles other than default
         self.reset_values()
         for y, row in enumerate(self.mapdata):  # data y axis
             for x, tile in enumerate(row):  # data x axis
@@ -482,9 +509,12 @@ class Isomap:
                     self.tiles[iso_pnt] = Isotile(fck_scope['sprites']['default'], self.scale, self.display, iso_pnt)
 
     def scale_map(self, scalar):  # TODO: find a way to do this that doesnt have a big impact on calculation time
-        self.scale = scalar
+        # scales the map
+        self.scale = scalar  # TODO: smooth scroll, animate?
         self.update_tiles()
 
+    # TODO: preload the possible map positions on turn?
+    # TODO: animate the spin
     def turn_clockwise(self):
         self.mapdata = list(zip(*self.mapdata[::-1]))  # clockwise
         self.update_tiles()
@@ -497,9 +527,9 @@ class Isomap:
         # draw all the tiles
         for tile in self.tiles.values():
             tile.draw()
-        for tile in self.tiles.values():
+        for tile in self.tiles.values():  # draw tile highlights
             if tile.draw_hl():
-                break
+                break  # first tile to draw the highlight ends it so no duplicates
 
         # move through frames of animation, we call this method every frame
         if Isotile.frame < fck_scope['tile anim len']:
@@ -527,6 +557,7 @@ clock = pygame.time.Clock()  # used to lock fps in main game loop
 
 def main():
     # VARIABLES
+    # TODO: move all this into fck_scope
 
     # game state variables
     # main menu
@@ -550,7 +581,7 @@ def main():
     # flags
     game_running = True  # for the main game loop
 
-    # load initial values
+    # set values
     fck_scope['default font'] = pygame.font.Font(os.path.join('assets', 'fonts', 'AtlantisInternational-jen0.ttf'), 30)
     last_frame_keys = pygame.key.get_pressed()
     load_sprites()
@@ -565,7 +596,7 @@ def main():
             if event.type == pygame.QUIT:  # close the window
                 game_running = False  # ends main game loop
             if event.type == pygame.KEYUP:
-                if event.key == K_F1:
+                if event.key == K_F1:  # TODO: move this into key controls function where it belongs
                     fck_scope['debug mode'] = not fck_scope['debug mode']  # toggle debug mode
             if event.type == pygame.MOUSEWHEEL:
                 m_wheel = event.y
@@ -574,10 +605,11 @@ def main():
         # keyboard input
         keys = pygame.key.get_pressed()  # the state of all keys in an array
         if fck_scope['states']['mission']:
-            handle_iso_movement(keys, last_frame_keys)
+            handle_iso_movement(keys, last_frame_keys)  # TODO: one function for key controls
         last_frame_keys = keys  # keep these keys to track changes in next frame
 
         # mouse input
+        # TODO: one function for mouse clicks, buttons, another for all mouse wheel stuff
         if fck_scope['states']['main menu']:
             check_button_collisions()
         elif fck_scope['states']['pause menu']:
