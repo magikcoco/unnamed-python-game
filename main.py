@@ -100,36 +100,15 @@ def load_map(game_map):
     f.close()  # close the file
 
 
-# TODO: condense into a single "draw_menu" function?
-# draws the pause menu on the screen
-def draw_pause_menu(display):
-    top_pad = 30  # padding from the top
-    buttons = ['MAIN MENU', 'TEST']  # list out buttons to draw
-    x = display.get_width() // 2 - fck_scope['button size default'][0] // 2  # center the button
-    btn_y = fck_scope['button size default'][1] + 20  # get the y position
-    for i in range(len(buttons)):  # draw every button in the list
-        y = top_pad + btn_y * i  # increment the y position to space buttons evenly
-        btn = Button(buttons[i], fck_scope['button size default'], fck_scope['colors']['dis_blue'], fck_scope['colors']['white'], display, (x, y))
-        btn.draw()  # have the button draw itself
-        fck_scope['buttons'].append(btn)  # add the button to the list of active buttons
-
-    # set flags
-    fck_scope['pause menu drawn'] = True
-
-
-# draws the main menu on the screen
-def draw_main_menu(display):
-    top_pad = 50  # the pad from the top of the display, for its border
-    buttons = ['PLAY', 'TEST']  # the buttons to put on this menu
+def draw_menu(button_list, display):
+    top_pad = 50
     x = display.get_width() // 2 - fck_scope['button size default'][0] // 2  # the x coordinate of these buttons
-    btn_y = fck_scope['button size default'][1] + 20  # the amount of space between buttons
-    for i in range(len(buttons)):  # draw the buttons
-        y = top_pad + btn_y * i  # incrementing the y
-        btn = Button(buttons[i], fck_scope['button size default'], fck_scope['colors']['dis_blue'], fck_scope['colors']['white'], display, (x, y))
-        btn.draw()
+    btn_y = fck_scope['button size default'][1] + 20
+    for i in range(len(button_list)):
+        y = top_pad + btn_y * i
+        btn = Button(button_list[i], fck_scope['button size default'], fck_scope['colors']['dis_blue'], fck_scope['colors']['white'], display, (x, y))
         fck_scope['buttons'].append(btn)  # add the button to the proper data structure
 
-    # set flags
     fck_scope['main menu drawn'] = True
 
 
@@ -153,7 +132,7 @@ def check_button_collisions():
                 fck_scope['states']['mission'] = False
                 fck_scope['states']['getaway'] = False
                 fck_scope['states']['pause menu'] = False
-                fck_scope['pause menu drawn'] = False
+                fck_scope['main menu drawn'] = False
                 fck_scope['buttons'].clear()
 
 
@@ -352,7 +331,7 @@ class Button:  # button for pressing and making things happen
         self.display.draw(self.my_surface, self.rect.topleft)  # draw this button on the display
         self.display.draw(btn_text, (self.rect.centerx - off_x // 2, self.rect.centery - off_y // 2))  # draw the text
 
-    def check_mouse(self):
+    def check_mouse(self):  # TODO: move mouse logic to main game loop to prevent double clicking
         # checks where the mouse is, returns true if it should do something
         s = 1.2  # the factor by which to scale the button
         action = False  # return flag
@@ -626,19 +605,21 @@ def main():
 
         # state-dependent
         # main menu
+        main_buttons = ['PLAY', 'TEST']  # TODO: move these to fck_scope
+        pause_buttons = ['MAIN MENU', 'TEST']
         if fck_scope['states']['main menu']:
-            if not fck_scope['main menu drawn']:
-                draw_main_menu(main_menu_display)
+            if not fck_scope['main menu drawn']:  # TODO: change the name of this variable
+                draw_menu(main_buttons, main_menu_display)
             for button in fck_scope['buttons']:
                 button.draw()
             main_menu_display.render()
         # game pause
         elif fck_scope['states']['pause menu']:  # pause menu should draw instead of anything else
-            if not fck_scope['pause menu drawn']:
-                draw_pause_menu(pause_menu_display)
+            if not fck_scope['main menu drawn']:
+                draw_menu(pause_buttons, main_menu_display)
             for button in fck_scope['buttons']:
                 button.draw()
-            pause_menu_display.render()
+            main_menu_display.render()
         elif fck_scope['states']['mission']:
             if not fck_scope['iso map loaded']:
                 load_map('default.txt')
