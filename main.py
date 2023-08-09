@@ -40,11 +40,14 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
     'display width': 1600,  # display width same as default window width
     'FPS': 24,  # frames per second the main game is locked to
     'iso map loaded': False,  # flag for loading isometric map
+    'isometric display': None,  # the display object for isometric maps
     'last frame keys': None,  # keys pressed from the last frame
+    'main menu buttons': ['PLAY', 'TEST'],
     'main menu drawn': False,  # flag for drawing main menu
     'main surface': None,  # the main surface that gets drawn on
     'menu display': None,  # the display object for menus
-    'isometric display': None,  # the display object for isometric maps
+    'mouse wheel': 0,  # the value of the mouse wheel
+    'pause menu buttons': ['MAIN MENU', 'TEST'],
     'pause menu drawn': False,  # flag for drawing pause menu
     'real time': 0,  # real time is milliseconds since last frame excluding frame lock delay
     'running': True,  # flag for the main game loop
@@ -64,6 +67,7 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
         'getaway': False,
         'pause menu': False
     },
+    'this frame keys': None,  # keys pressed from this frame
     'tile anim len': 0,  # the number of frames in a tile animation
     'tile hl len': 0,  # the number of frames in a tile highlight animation
     'window width': 1600,  # width of the window, kept in 16:9 aspect ratio
@@ -577,8 +581,6 @@ def main():
 
     # MAIN GAME LOOP
     while fck_scope['running']:
-        m_wheel = 0
-
         # EVENTS
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # close the window
@@ -587,14 +589,13 @@ def main():
                 if event.key == K_F1:  # TODO: move this into key controls function where it belongs
                     fck_scope['debug mode'] = not fck_scope['debug mode']  # toggle debug mode
             if event.type == pygame.MOUSEWHEEL:
-                m_wheel = event.y
+                fck_scope['mouse wheel'] = event.y
 
         # CONTROLS
         # keyboard input
-        keys = pygame.key.get_pressed()  # the state of all keys in an array
+        fck_scope['this frame keys'] = pygame.key.get_pressed()  # the state of all keys in an array
         if fck_scope['states']['mission']:
-            handle_iso_movement(keys, fck_scope['last frame keys'])  # TODO: one function for key controls
-        fck_scope['last frame keys'] = keys  # keep these keys to track changes in next frame
+            handle_iso_movement(fck_scope['this frame keys'], fck_scope['last frame keys'])  # TODO: one function for key controls
 
         # mouse input
         # TODO: one function for mouse clicks, buttons, another for all mouse wheel stuff
@@ -603,33 +604,30 @@ def main():
         elif fck_scope['states']['pause menu']:
             check_button_collisions()
         elif fck_scope['states']['mission']:
-            handle_iso_zoom(m_wheel)
+            handle_iso_zoom(fck_scope['mouse wheel'])
 
         # GAME LOGIC
         # none yet
 
         # RENDER GAME
+        # TODO: move to a method for rendering stuff
         # fill screen to wipe away last frame
         fck_scope['main surface'].fill(fck_scope['colors']['black'])  # fills screen with solid black
 
         # state-dependent
-        # main menu
-        main_buttons = ['PLAY', 'TEST']  # TODO: move these to fck_scope
-        pause_buttons = ['MAIN MENU', 'TEST']
-        if fck_scope['states']['main menu']:
-            if not fck_scope['main menu drawn']:  # TODO: change the name of this variable
-                draw_menu(main_buttons, fck_scope['menu display'])
-            for button in fck_scope['buttons']:
-                button.draw()
-            fck_scope['menu display'].render()
-        # game pause
-        elif fck_scope['states']['pause menu']:  # pause menu should draw instead of anything else
+        if fck_scope['states']['pause menu']:  # pause menu should draw instead of anything else
             if not fck_scope['main menu drawn']:
-                draw_menu(pause_buttons, fck_scope['menu display'])
+                draw_menu(fck_scope['pause menu buttons'], fck_scope['menu display'])
             for button in fck_scope['buttons']:
                 button.draw()
             fck_scope['menu display'].render()
-        elif fck_scope['states']['mission']:
+        elif fck_scope['states']['main menu']:  # main menu game state
+            if not fck_scope['main menu drawn']:  # TODO: change the name of this variable
+                draw_menu(fck_scope['main menu buttons'], fck_scope['menu display'])
+            for button in fck_scope['buttons']:
+                button.draw()
+            fck_scope['menu display'].render()
+        elif fck_scope['states']['mission']:  # mission game state
             if not fck_scope['iso map loaded']:
                 load_map('default.txt')
                 fck_scope['current map'] = Isomap(fck_scope['current map data'], fck_scope['isometric display'])
@@ -640,6 +638,7 @@ def main():
 
         # debug_mode overlay
         if fck_scope['debug mode']:  # debug stuff draws on top of anything else being rendered
+            ## text with the information ##
             dt_text = fck_scope['default font'].render(  # setup delta time text
                 'dt=' + str(fck_scope['delta time']) + 'ms',
                 1,
@@ -655,23 +654,28 @@ def main():
                 1,
                 fck_scope['colors']['white']
             )
+            ## adds all the text onto the screen  ##
             fck_scope['main surface'].blit(dt_text, (0, 0))  # add delta time tracker to upper left
             fck_scope['main surface'].blit(rt_text, (0, 25))  # add delta time tracker to upper left
             fck_scope['main surface'].blit(mouse_text, (0, 25 * 2))  # add mouse text
 
+        ## this is where everything becomes visible on the screen  ##
         # put work on the screen
-        fck_scope['screen'].blit(  # put the display onto the screen
-            pygame.transform.scale(
+        fck_scope['screen'].blit(  # put the main surface onto the screen
+            pygame.transform.scale(  # scale the main surface to the size of the screen
                 fck_scope['main surface'],
                 fck_scope['screen'].get_size()
             ),
             (0, 0)
         )
-        pygame.display.update()  # update main_surface
+        # update main_surface
+        pygame.display.update()
 
-        # FRAME LOCK / METRICS
+        # take metrics and reset values
         fck_scope['real time'] = fck_scope['clock'].get_rawtime()
         fck_scope['delta time'] = fck_scope['clock'].tick(fck_scope['FPS'])
+        fck_scope['mouse wheel'] = 0
+        fck_scope['last frame keys'] = fck_scope['this frame keys']  # the keys previously for this frame are now for last frame
 
     pygame.quit()  # quit pygame or otherwise game will continue after closing
 
