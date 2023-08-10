@@ -42,10 +42,12 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
     'iso map loaded': False,  # flag for loading isometric map
     'isometric display': None,  # the display object for isometric maps
     'last frame keys': None,  # keys pressed from the last frame
+    'last frame mouse': None,  # mouse buttons from the last frame
     'main menu buttons': ['PLAY', 'TEST'],
-    'main menu drawn': False,  # flag for drawing main menu
     'main surface': None,  # the main surface that gets drawn on
+    'map speed': 10,  # speed maps move
     'menu display': None,  # the display object for menus
+    'menu drawn': False,  # flag for drawing main menu
     'mouse wheel': 0,  # the value of the mouse wheel
     'pause menu buttons': ['MAIN MENU', 'TEST'],
     'pause menu drawn': False,  # flag for drawing pause menu
@@ -68,6 +70,7 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
         'pause menu': False
     },
     'this frame keys': None,  # keys pressed from this frame
+    'this frame mouse': None,  # mouse buttons from this frame
     'tile anim len': 0,  # the number of frames in a tile animation
     'tile hl len': 0,  # the number of frames in a tile highlight animation
     'window width': 1600,  # width of the window, kept in 16:9 aspect ratio
@@ -76,6 +79,27 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
 
 
 # DEFINE FUNCTIONS
+def change_state(new_state, unpause=False):
+    # TODO: transitions? based on what state changes to what new state
+    for state in fck_scope['states'].keys():
+        if state == new_state:
+            fck_scope['states'][state] = True
+        elif not unpause:
+            if state != 'pause menu':
+                fck_scope['states'][state] = False
+        else:
+            fck_scope['states'][state] = False
+
+
+def switch_with_menu_state(new_state):
+    if new_state == 'main menu':
+        change_state(new_state, True)
+    else:
+        change_state(new_state)
+    fck_scope['menu drawn'] = False  # main menu not drawn anymore
+    fck_scope['buttons'].clear()  # clear the main menu buttons out
+
+
 # loads all sounds into a dictionary
 def load_sounds():
     # load sounds that the game uses for various things
@@ -126,31 +150,19 @@ def draw_menu(button_list, display):
         btn = Button(button_list[i], fck_scope['button size default'], fck_scope['colors']['dis_blue'], fck_scope['colors']['white'], display, (x, y))
         fck_scope['buttons'].append(btn)  # add the button to the proper data structure
 
-    fck_scope['main menu drawn'] = True
+    fck_scope['menu drawn'] = True
 
 
 # checks if any active buttons have been clicked and performs an action if they have been
 def check_button_collisions():
     # button actions
     # TODO: state dependent button names
-    # TODO: function for changing state?
-    for button in fck_scope['buttons']:  # TODO: functions for each button
+    for button in fck_scope['buttons']:
         if button.check_mouse():  # what each button does
             if button.name == 'PLAY':  # main menu play button, starts the game without loading any save
-                fck_scope['states']['main menu'] = False  # not on the main menu anymore
-                fck_scope['states']['mission'] = True  # TODO: change the flag when new contexts are made
-                fck_scope['main menu drawn'] = False  # main menu not drawn anymore
-                fck_scope['buttons'].clear()  # clear the main menu buttons out
+                switch_with_menu_state('mission')  # TODO: change this when the other game states are added
             elif button.name == 'MAIN MENU':  # pause menu main menu button, quits to main menu
-                fck_scope['states']['main menu'] = True
-                fck_scope['states']['downtime'] = False
-                fck_scope['states']['meetup'] = False
-                fck_scope['states']['legwork'] = False
-                fck_scope['states']['mission'] = False
-                fck_scope['states']['getaway'] = False
-                fck_scope['states']['pause menu'] = False
-                fck_scope['main menu drawn'] = False
-                fck_scope['buttons'].clear()
+                switch_with_menu_state('main menu')
 
 
 # scale the isometric map in mission context within certain bounds
@@ -161,38 +173,47 @@ def handle_iso_zoom(m_wheel):  # m_wheel is the value given by pygame, negative 
         fck_scope['current map'].scale_map(scalar)
 
 
-# move the isometric map
-def handle_iso_movement(keys, last_frame_keys):
-    map_vel = 10  # speed at which the map moves
-
+def check_pause_control():
     # pause game, should not be continuous
-    if keys[pygame.K_ESCAPE] and not last_frame_keys[pygame.K_ESCAPE]:
-        fck_scope['states']['pause menu'] = not fck_scope['states']['pause menu']  # (un)pause the game (context change method?)
+    if fck_scope['this frame keys'][pygame.K_ESCAPE] and not fck_scope['last frame keys'][pygame.K_ESCAPE]:
+        fck_scope['states']['pause menu'] = not fck_scope['states']['pause menu']  # (un)pause the game
         if not fck_scope['states']['pause menu']:  # if we just unpaused the game
             fck_scope['buttons'].clear()  # clear buttons
-            fck_scope['pause menu drawn'] = False  # switch flag
+            fck_scope['menu drawn'] = False  # switch flag
 
-    if not fck_scope['states']['pause menu']:  # dont allow in pause context
-        # lateral movement keys, should be continuous
-        if keys[pygame.K_UP]:  # map up
-            fck_scope['current map'].offset_y -= map_vel
-        if keys[pygame.K_DOWN]:  # map down
-            fck_scope['current map'].offset_y += map_vel
-        if keys[pygame.K_LEFT]:  # map left
-            fck_scope['current map'].offset_x -= map_vel
-        if keys[pygame.K_RIGHT]:  # map right
-            fck_scope['current map'].offset_x += map_vel
 
-        # rotation keys, should not be continuous
-        if keys[pygame.K_LCTRL] and not last_frame_keys[pygame.K_LCTRL]:
-            fck_scope['current map'].turn_counterclockwise()  # TODO: Object or function job here?
-        if keys[pygame.K_RCTRL] and not last_frame_keys[pygame.K_RCTRL]:
-            fck_scope['current map'].turn_clockwise()
+def check_map_movement():
+    # lateral movement keys, should be continuous
+    if fck_scope['this frame keys'][pygame.K_UP]:  # map up
+        fck_scope['current map'].offset_y -= fck_scope['map speed']
+    if fck_scope['this frame keys'][pygame.K_DOWN]:  # map down
+        fck_scope['current map'].offset_y += fck_scope['map speed']
+    if fck_scope['this frame keys'][pygame.K_LEFT]:  # map left
+        fck_scope['current map'].offset_x -= fck_scope['map speed']
+    if fck_scope['this frame keys'][pygame.K_RIGHT]:  # map right
+        fck_scope['current map'].offset_x += fck_scope['map speed']
+
+
+def check_map_rotation():
+    if fck_scope['this frame keys'][pygame.K_LCTRL] and not fck_scope['last frame keys'][pygame.K_LCTRL]:
+        fck_scope['current map'].turn_counterclockwise()  # TODO: Object or function job here?
+    if fck_scope['this frame keys'][pygame.K_RCTRL] and not fck_scope['last frame keys'][pygame.K_RCTRL]:
+        fck_scope['current map'].turn_clockwise()
+
+
+## keyboard controls ##
+def keyboard_controls():
+    if fck_scope['states']['pause menu']:
+        check_pause_control()
+    elif fck_scope['states']['mission']:  # controls for mission state
+        check_pause_control()
+        check_map_movement()
+        check_map_rotation()
 
 
 # DEFINE OBJECTS
 class Display:  # a display for components on the screen
-    def __init__(self, name, s_size, location, border_color, fill_color, text_color, main_surface):  # TODO: fix shadow
+    def __init__(self, name, s_size, location, border_color, fill_color, text_color, main_surface):
         # passed values
         self.name = name.strip()  # the name of this display
         self.my_surface = pygame.Surface(s_size)  # the surface within the display
@@ -359,7 +380,7 @@ class Button:  # button for pressing and making things happen
                 self.scale_btn(s)  # scale the button up
                 self.reset_anim()  # reset the animation for new button size
                 self.hover_sound.play()  # play the hover sound
-            if pygame.mouse.get_pressed()[0] and not self.clicked:  # left click
+            if fck_scope['this frame mouse'][0] and not fck_scope['last frame mouse'][0] and not self.clicked:  # left click
                 action = True  # switch flag to do something
                 self.clicked = True  # set this flag so that there isn't continuous execution each frame
         elif self.highlight:  # if highlighted but not colliding with mouse, stop highlighting
@@ -367,7 +388,7 @@ class Button:  # button for pressing and making things happen
             self.scale_btn(1 / s)  # scale back to original size
             self.reset_anim()  # reset the animation again
 
-        if not pygame.mouse.get_pressed()[0]:
+        if not fck_scope['this frame mouse'][0]:
             self.clicked = False  # if the mouse isn't pressed, the button isn't being clicked
 
         return action  # return the action flag
@@ -570,6 +591,7 @@ def main():
     fck_scope['default font'] = pygame.font.Font(os.path.join('assets', 'fonts', 'AtlantisInternational-jen0.ttf'), 30)
     # input controls
     fck_scope['last frame keys'] = pygame.key.get_pressed()
+    fck_scope['last frame mouse'] = pygame.mouse.get_pressed()
     # timers
     fck_scope['clock'] = pygame.time.Clock()  # used to lock fps in main game loop
 
@@ -594,11 +616,11 @@ def main():
         # CONTROLS
         # keyboard input
         fck_scope['this frame keys'] = pygame.key.get_pressed()  # the state of all keys in an array
-        if fck_scope['states']['mission']:
-            handle_iso_movement(fck_scope['this frame keys'], fck_scope['last frame keys'])  # TODO: one function for key controls
+        keyboard_controls()
 
         # mouse input
         # TODO: one function for mouse clicks, buttons, another for all mouse wheel stuff
+        fck_scope['this frame mouse'] = pygame.mouse.get_pressed()
         if fck_scope['states']['main menu']:
             check_button_collisions()
         elif fck_scope['states']['pause menu']:
@@ -616,13 +638,13 @@ def main():
 
         # state-dependent
         if fck_scope['states']['pause menu']:  # pause menu should draw instead of anything else
-            if not fck_scope['main menu drawn']:
+            if not fck_scope['menu drawn']:
                 draw_menu(fck_scope['pause menu buttons'], fck_scope['menu display'])
             for button in fck_scope['buttons']:
                 button.draw()
             fck_scope['menu display'].render()
         elif fck_scope['states']['main menu']:  # main menu game state
-            if not fck_scope['main menu drawn']:  # TODO: change the name of this variable
+            if not fck_scope['menu drawn']:  # TODO: change the name of this variable
                 draw_menu(fck_scope['main menu buttons'], fck_scope['menu display'])
             for button in fck_scope['buttons']:
                 button.draw()
@@ -676,6 +698,7 @@ def main():
         fck_scope['delta time'] = fck_scope['clock'].tick(fck_scope['FPS'])
         fck_scope['mouse wheel'] = 0
         fck_scope['last frame keys'] = fck_scope['this frame keys']  # the keys previously for this frame are now for last frame
+        fck_scope['last frame mouse'] = fck_scope['this frame mouse']
 
     pygame.quit()  # quit pygame or otherwise game will continue after closing
 
