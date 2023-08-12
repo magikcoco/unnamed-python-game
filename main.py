@@ -46,6 +46,7 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
     'map speed': 10,  # speed maps move
     'menu display': None,  # the display object for menus
     'menu drawn': False,  # flag for drawing main menu
+    'mouse position': (0, 0),  # absolute position of the mouse cursor on the screen
     'mouse wheel': 0,  # the value of the mouse wheel
     'pause menu buttons': ['MAIN MENU', 'TEST'],
     'pause menu drawn': False,  # flag for drawing pause menu
@@ -130,8 +131,7 @@ class Display:  # a display for components on the screen
 
     def get_relative_mouse_pos(self):
         # get the mouse position relative to this display, useful for mouse collisions
-        m_pos = pygame.mouse.get_pos()
-        return m_pos[0] - self.location[0], m_pos[1] - self.location[1]
+        return fck_scope['mouse position'][0] - self.location[0], fck_scope['mouse position'][1] - self.location[1]
 
     def get_width(self):
         # get the width of this display (includes borders)
@@ -578,7 +578,7 @@ def draw_debug_info():
         fck_scope['colors']['white']
     )
     mouse_text = fck_scope['default font'].render(  # mouse position
-        'mp=' + str(pygame.mouse.get_pos()),
+        'mp=' + str(fck_scope['mouse position']),
         1,
         fck_scope['colors']['white']
     )
@@ -689,6 +689,9 @@ def main():
 
     # MAIN GAME LOOP
     while fck_scope['running']:
+        # get values
+        fck_scope['mouse position'] = pygame.mouse.get_pos()
+
         # EVENTS
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # close the window
