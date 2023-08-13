@@ -29,7 +29,7 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
     'colors': {  # dictionary of preset colors
         'black': (0, 0, 0),  # basic black
         'white': (255, 255, 255),  # basic white
-        'dis_blue': (0, 134, 223)  # blue used for displays
+        'display blue': (0, 134, 223)  # blue used for displays
     },
     'current map': None,  # the current map loaded in the game
     'current map data': [],  # a 2D list of the current map data
@@ -49,7 +49,6 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
     'mouse position': (0, 0),  # absolute position of the mouse cursor on the screen
     'mouse wheel': 0,  # the value of the mouse wheel
     'pause menu buttons': ['MAIN MENU', 'TEST'],
-    'pause menu drawn': False,  # flag for drawing pause menu
     'real time': 0,  # real time is milliseconds since last frame excluding frame lock delay
     'running': True,  # flag for the main game loop
     'screen': None,  # application window object
@@ -79,15 +78,11 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
 
 # DEFINE OBJECTS
 class Display:  # a display for components on the screen
-    def __init__(self, name, s_size, location, border_color, fill_color, text_color, main_surface):
+    def __init__(self, name='window', s_size=(300, 300), location=(0, 0)):
         # passed values
         self.name = name.strip()  # the name of this display
         self.my_surface = pygame.Surface(s_size)  # the surface within the display
         self.location = location  # the location of the display relative to the main surface
-        self.border_color = border_color  # the border color of this display
-        self.fill_color = fill_color  # the fill color for the background of this display
-        self.text_color = text_color  # the color with which to draw text
-        self.main_surface = main_surface  # the surface to draw the display onto
 
         # initial / calculated values
         self.render_queue = list()  # the list of things to draw when this display is rendered
@@ -101,43 +96,34 @@ class Display:  # a display for components on the screen
 
     def render(self):
         # renders this display and everything contained within
-        self.my_surface.fill(self.fill_color)  # wipe away previous frame
+        self.my_surface.fill(fck_scope['colors']['black'])  # wipe away previous frame
         for thing, location in self.render_queue:  # draw everything in queue
             self.my_surface.blit(thing, location)
         self.render_queue.clear()  # clear the queue
         # draw a border around the display, overlaps and covers anything rendered in the display
-        pygame.draw.rect(self.my_surface, self.border_color, self.border_bottom)
-        pygame.draw.rect(self.my_surface, self.border_color, self.border_right)
-        pygame.draw.rect(self.my_surface, self.border_color, self.border_left)
-        pygame.draw.rect(self.my_surface, self.border_color, self.border_top)
+        pygame.draw.rect(self.my_surface, fck_scope['colors']['display blue'], self.border_bottom)
+        pygame.draw.rect(self.my_surface, fck_scope['colors']['display blue'], self.border_right)
+        pygame.draw.rect(self.my_surface, fck_scope['colors']['display blue'], self.border_left)
+        pygame.draw.rect(self.my_surface, fck_scope['colors']['display blue'], self.border_top)
         if not self.name == '':  # render a name if its not blank
-            title = fck_scope['default font'].render(self.name, 1, self.text_color)
+            title = fck_scope['default font'].render(self.name, 1, fck_scope['colors']['black'])
             text_width, text_height = fck_scope['default font'].size(self.name)
             self.my_surface.blit(title, (self.border_top.centerx - text_width // 2, 0))
-        self.main_surface.blit(self.my_surface, self.location)  # blit the display onto the main surface
+        fck_scope['main surface'].blit(self.my_surface, self.location)  # blit the display onto the main surface
 
     def draw(self, thing, location):
         # add something to the render queue
         self.render_queue.append((thing, location))
 
-    def move_to(self, x, y):
-        # move this display to the new given coordinates
-        self.location[0] = x
-        self.location[1] = y
-
-    def get_fill(self):
-        # get the color used to fill this display
-        return self.fill_color
-
     def get_relative_mouse_pos(self):
         # get the mouse position relative to this display, useful for mouse collisions
         return fck_scope['mouse position'][0] - self.location[0], fck_scope['mouse position'][1] - self.location[1]
 
-    def get_width(self):
+    def get_total_width(self):
         # get the width of this display (includes borders)
         return self.my_surface.get_width()
 
-    def get_height(self):
+    def get_total_height(self):
         # get the height of this display (includes borders)
         return self.my_surface.get_height()
 
@@ -169,7 +155,7 @@ class Button:  # button for pressing and making things happen
     def draw(self):
         # draws this button onto it's display
         s = self.my_surface  # abbreviation for self.my_surface, makes things look a little neater
-        s.fill(self.display.get_fill())  # wipe away last frame
+        s.fill(fck_scope['colors']['black'])  # wipe away last frame
         x = self.rect.size[0]  # the maximum x value
         y = self.rect.size[1]  # the maximum y value
         off_x, off_y = fck_scope['default font'].size(self.name)  # the offsets for the text in the button
@@ -349,8 +335,8 @@ class Isomap:
 
         # changes
         self.scale = 2  # scale of this map
-        self.offset_x = self.display.get_width() // 2  # offset (default to middle)
-        self.offset_y = self.display.get_height() // 2
+        self.offset_x = self.display.get_total_width() // 2  # offset (default to middle)
+        self.offset_y = self.display.get_total_height() // 2
 
         #default, declare the first time
         self.tiles = dict()  # all tiles in this map
@@ -489,11 +475,11 @@ def load_map(game_map):
 
 def draw_menu(button_list, display):
     top_pad = 50
-    x = display.get_width() // 2 - fck_scope['button size default'][0] // 2  # the x coordinate of these buttons
+    x = display.get_total_width() // 2 - fck_scope['button size default'][0] // 2  # the x coordinate of these buttons
     btn_y = fck_scope['button size default'][1] + 20
     for i in range(len(button_list)):
         y = top_pad + btn_y * i
-        btn = Button(button_list[i], fck_scope['button size default'], fck_scope['colors']['dis_blue'], fck_scope['colors']['white'], display, (x, y))
+        btn = Button(button_list[i], fck_scope['button size default'], fck_scope['colors']['display blue'], fck_scope['colors']['white'], display, (x, y))
         fck_scope['buttons'].append(btn)  # add the button to the proper data structure
 
     fck_scope['menu drawn'] = True
@@ -658,20 +644,12 @@ def main():
         'Menu',  # title on this display
         (fck_scope['display width'] // 5, fck_scope['display height'] - 20),  # size of the display
         (10, 10),  # location of the display on the main surface
-        fck_scope['colors']['dis_blue'],  #
-        fck_scope['colors']['black'],  #
-        fck_scope['colors']['black'],
-        fck_scope['main surface']
     )
     # map display
     fck_scope['isometric display'] = Display(
         'Mission',
         (fck_scope['display width'] // 5 * 3, fck_scope['display height'] - 20),
         (fck_scope['display width'] // 2 - (fck_scope['display width'] // 5 * 3) // 2, 10),
-        fck_scope['colors']['dis_blue'],
-        fck_scope['colors']['black'],
-        fck_scope['colors']['black'],
-        fck_scope['main surface']
     )
     # fonts
     fck_scope['default font'] = pygame.font.Font(os.path.join('assets', 'fonts', 'AtlantisInternational-jen0.ttf'), 30)
