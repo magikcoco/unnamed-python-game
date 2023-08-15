@@ -79,12 +79,9 @@ fck_scope = {  # all the variables defined in a dictionary as key: variable name
 # DEFINE OBJECTS
 class Display:  # a display for components on the screen
     def __init__(self, name='window', s_size=(300, 300), location=(0, 0)):
-        # passed values
         self.name = name.strip()  # the name of this display
         self.my_surface = pygame.Surface(s_size)  # the surface within the display
         self.location = location  # the location of the display relative to the main surface
-
-        # initial / calculated values
         self.render_queue = list()  # the list of things to draw when this display is rendered
         if self.name == '':  # blank name gets no title bar
             self.border_top = pygame.Rect((0, 0), (s_size[0], 10))  # the borders of this display
@@ -129,18 +126,15 @@ class Display:  # a display for components on the screen
 
 
 class Button:  # button for pressing and making things happen
-    def __init__(self, name, s_size, color, color_hl, display, location):
+    def __init__(self, name, s_size, display, location):
         # passed variables
         self.name = name  # the name of this button, used for executing code and display
         self.my_surface = pygame.Surface(s_size)  # the surface of this button
-        self.color = color  # the color of this button
-        self.color_hl = color_hl  # the color this button changes to when its highlighted
         self.display = display  # the display this button is inside of
         self.rect = self.my_surface.get_rect()  # the rectangle of this button, used for positioning
         self.rect.topleft = location  # the actual position within the display where this button is placed
 
-        # initial / calculated values
-        self.clicked = False  # flag for if this button has been clicked
+        # these must be per-object so that the animation works
         self.highlight = False  # flag for if this button is currently highlighted
         self.to = 0  # top offset for highlight line
         self.bo = self.rect.size[0]  # bottom offset for highlight line
@@ -150,7 +144,6 @@ class Button:  # button for pressing and making things happen
         self.bot_go = True  # on the bottom
         self.left_go = False  # on the left
         self.right_go = False  # or on the right
-        self.hover_sound = fck_scope['sounds']['button hover']  # the sound this button makes when hovered over
 
     def draw(self):
         # draws this button onto it's display
@@ -163,14 +156,14 @@ class Button:  # button for pressing and making things happen
         t = 2  # line thickness
         l = 40  # length of animated line on highlight
         if not self.highlight:  # if the button is not currently highlighted
-            c = self.color  # abbreviation for self.color for neater expressions
+            c = fck_scope['colors']['display blue']  # abbreviation
             pygame.draw.line(s, c, (x - t, 0), (x - t, y), t)  # right
             pygame.draw.line(s, c, (0, 0), (0, y), t)  # left
             pygame.draw.line(s, c, (0, y - t), (x, y - t), t)  # bot
             pygame.draw.line(s, c, (0, 0), (x, 0), t)  # top
-            btn_text = fck_scope['default font'].render(self.name, 1, self.color)  # render the button text
+            btn_text = fck_scope['default font'].render(self.name, 1, fck_scope['colors']['display blue'])  # render the button text
         else:  # if the button is currently highlighted
-            c = self.color_hl  # abbr. for self.color
+            c = fck_scope['colors']['white']  # abbr.
             # animate the border, two lines running along the border of the button
             # right line animates bottom to top
             if self.right_go:  # check flag for if this line should be rendered
@@ -220,7 +213,7 @@ class Button:  # button for pressing and making things happen
         self.display.draw(self.my_surface, self.rect.topleft)  # draw this button on the display
         self.display.draw(btn_text, (self.rect.centerx - off_x // 2, self.rect.centery - off_y // 2))  # draw the text
 
-    def check_mouse(self):  # TODO: move mouse logic to main game loop to prevent double clicking
+    def check_mouse(self):
         # checks where the mouse is, returns true if it should do something
         s = 1.2  # the factor by which to scale the button
         action = False  # return flag
@@ -229,18 +222,13 @@ class Button:  # button for pressing and making things happen
             if not self.highlight:  # if the button is not being highlighted, highlight it
                 self.highlight = True  # set flag for animation in draw()
                 self.scale_btn(s)  # scale the button up
-                self.reset_anim()  # reset the animation for new button size
-                self.hover_sound.play()  # play the hover sound
-            if fck_scope['this frame mouse'][0] and not fck_scope['last frame mouse'][0] and not self.clicked:  # left click
+                fck_scope['sounds']['button hover'].play()  # play the hover sound
+            if fck_scope['this frame mouse'][0] and not fck_scope['last frame mouse'][0]:  # left click
                 action = True  # switch flag to do something
-                self.clicked = True  # set this flag so that there isn't continuous execution each frame
         elif self.highlight:  # if highlighted but not colliding with mouse, stop highlighting
             self.highlight = False  # flag
             self.scale_btn(1 / s)  # scale back to original size
-            self.reset_anim()  # reset the animation again
-
-        if not fck_scope['this frame mouse'][0]:
-            self.clicked = False  # if the mouse isn't pressed, the button isn't being clicked
+            self.reset_anim()  # reset the animation
 
         return action  # return the action flag
 
@@ -256,14 +244,13 @@ class Button:  # button for pressing and making things happen
         self.right_go = False
 
     def scale_btn(self, z):
-        # scale the button to a new size from the center
+        # scale the button to a new size from the center and reposition it
         new_size = (self.rect.size[0] * z, self.rect.size[1] * z)  # the size
         new_x = self.rect.centerx - (z * self.rect.size[0] // 2)  # new topleft x location
         new_y = self.rect.centery - (z * self.rect.size[1] // 2)  # new topleft y location
-        new_loc = (new_x, new_y)  # new topleft tuple
         self.my_surface = pygame.Surface(new_size)  # make a new surface of the new size
         self.rect = self.my_surface.get_rect()  # get its rectangle
-        self.rect.topleft = new_loc  # place that rectangle at the new position
+        self.rect.topleft = (new_x, new_y)  # place that rectangle at the new position
 
 
 class Isotile:
@@ -282,10 +269,10 @@ class Isotile:
         self.point = point  # get the location of this tile (topleft)
         highlight = pygame.transform.scale(fck_scope['sprites']['highlight'][0], (20 * self.scale, 11 * self.scale))
         self.hl_rect = highlight.get_rect(topleft=point)  # where to draw the highlight on this tile
-        self.can_hl = can_highlight  # if this tile is highlightable
+        self.can_hl = can_highlight  # if this tile can have a highlight
 
     def detect_mouse_hover(self):
-        # find out if the mouse is hovering on a tile with raycasting
+        # find out if the mouse is hovering on a tile with ray-casting
         hover = False
         # mouse location
         mx, my = self.display.get_relative_mouse_pos()
@@ -479,7 +466,12 @@ def draw_menu(button_list, display):
     btn_y = fck_scope['button size default'][1] + 20
     for i in range(len(button_list)):
         y = top_pad + btn_y * i
-        btn = Button(button_list[i], fck_scope['button size default'], fck_scope['colors']['display blue'], fck_scope['colors']['white'], display, (x, y))
+        btn = Button(
+            button_list[i],
+            fck_scope['button size default'],
+            display,
+            (x, y)
+        )
         fck_scope['buttons'].append(btn)  # add the button to the proper data structure
 
     fck_scope['menu drawn'] = True
